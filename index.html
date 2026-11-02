@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="es" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FnxDubStudio - Academia e Interactivos de Audio</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        studio: {
+                            900: '#0b0f19',
+                            800: '#111827',
+                            700: '#1f2937',
+                            600: '#374151',
+                            accent: '#38bdf8',
+                            purple: '#c084fc',
+                            orange: '#fb923c',
+                            green: '#34d399',
+                            pink: '#f472b6',
+                            indigo: '#818cf8',
+                            cyan: '#22d3ee',
+                            rose: '#fb7185'
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #0b0f19;
+            color: #f3f4f6;
+        }
+        .glow-effect:hover {
+            box-shadow: 0 0 25px rgba(56, 189, 248, 0.25);
+            transform: translateY(-3px);
+        }
+        .card-transition {
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col justify-between selection:bg-sky-500 selection:text-white">
+
+    <!-- Header Principal -->
+    <header class="bg-studio-800 border-b border-studio-700/60 sticky top-0 z-50 backdrop-blur-md bg-opacity-80">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex items-center justify-between">
+            <div class="flex items-center space-x-3">
+                <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-sky-500 to-indigo-600 flex items-center justify-center shadow-lg shadow-sky-500/30">
+                    <i class="fa-solid fa-microphone-lines text-white text-lg"></i>
+                </div>
+                <div>
+                    <h1 class="text-lg font-bold tracking-tight text-white flex items-center gap-2">
+                        <span>FnxDubStudio</span>
+                        <span class="text-xs font-semibold px-2 py-0.5 rounded-full bg-sky-500/10 text-sky-400 border border-sky-500/20">Portal Educativo</span>
+                    </h1>
+                    <p class="text-xs text-gray-400">Herramientas visuales e interactivas para locución y doblaje</p>
+                </div>
+            </div>
+            <div class="flex items-center space-x-2">
+                <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                    <span class="w-2 h-2 mr-1.5 bg-emerald-400 rounded-full animate-pulse"></span> Sistema Activo
+                </span>
+            </div>
+        </div>
+    </header>
+
+    <!-- Contenido Principal / Botonera -->
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 flex-grow w-full">
+        
+        <!-- Banner de Bienvenida -->
+        <div class="mb-10 text-center max-w-3xl mx-auto">
+            <h2 class="text-3xl sm:text-4xl font-extrabold text-white tracking-tight mb-3">
+                Laboratorio Visual de <span class="text-transparent bg-clip-text bg-gradient-to-r from-sky-400 to-indigo-400">Audio Profesional</span>
+            </h2>
+            <p class="text-gray-400 text-sm sm:text-base">
+                Selecciona cualquiera de los simuladores interactivos diseñados por FnxDubStudio para comprender de forma gráfica el comportamiento del sonido, los procesadores y el hardware de estudio.
+            </p>
+        </div>
+
+        <!-- Grid de Tarjetas / Botonera Completa -->
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+
+            <!-- 1. Acústica y Micrófonos -->
+            <a href="ac_stica_y_micr_fonos.html" class="card-transition glow-effect bg-studio-800/80 border border-studio-700 hover:border-pink-500/50 rounded-2xl p-6 flex flex-col justify-between group">
+                <div>
+                    <div class="flex items-center justify-between mb-4">
+                        <div class="w-12 h-12 rounded-xl bg-pink-500/10 text-pink-400 flex items-center justify-center border border-pink-500/20 group-hover:scale-110 transition-transform">
+                            <i class="fa-solid fa-bullhorn text-xl"></i>
+                        </div>
+                        <span class="text-xs font-mono text-gray-400 bg-studio-900 px-2.5 py-1 rounded-md border border-studio-700">Módulo 01</span>
+                    </div>
+                    <h3 class="text-lg font-bold text-white group-hover:text-pink-400 transition-colors mb-2">Acústica y Patrones Polares</h3>
+                    <p class="text-xs text-gray-400 leading-relaxed">
+                        Simula rebotes de ondas sonoras en habitaciones (con/sin tratamiento) y analiza los diagramas polares de distintos micrófonos.
+                    </p>
+                </div>
+                <div class="mt-6 pt-4 border-t border-studio-700/60 flex items-center justify-between text-xs font-medium text-pink-400">
+                    <span>Abrir simulador</span>
+                    <i class="fa-solid fa-arrow-right group-hover:translate-x-1 transition-transform"></i>
+                </div>
+            </a>
+
+            <!-- 2. Fundamentos de Audio Digital -->
+            <a href="fundamentos_de_audio_digital.html" class="card-transition glow-effect bg-studio-800/80 border border-studio-700 hover:border-cyan-500/50 rounded-2xl p-6 flex flex-col justify-between group">
+                <div>
+                    <div class="flex items-center justify-between mb-4">
+                        <div class="w-12 h-12 rounded-xl bg-cyan-500/10 text-cyan-400 flex items-center justify-center border border-cyan-500/20 group-hover:scale-110 transition-transform">
+                            <i class="fa-solid fa-wave-square text-xl"></i>
+                        </div>
+                        <span class="text-xs font-mono text-gray-400 bg-studio-900 px-2.5 py-1 rounded-md border border-studio-700">Módulo 02</span>
+                    </div>
+                    <h3 class="text-lg font-bold text-white group-hover:text-cyan-400 transition-colors mb-2">Fundamentos de Audio Digital</h3>
+                    <p class="text-xs text-gray-400 leading-relaxed">
+                        Explora dBFS, LUFS, Frecuencia de Muestreo, Profundidad de Bits y compruébalo con los formatos de exportación (MP3, FLAC, WAV).
+                    </p>
+                </div>
+                <div class="mt-6 pt-4 border-t border-studio-700/60 flex items-center justify-between text-xs font-medium text-cyan-400">
+                    <span>Abrir simulador</span>
+                    <i class="fa-solid fa-arrow-right group-hover:translate-x-1 transition-transform"></i>
+                </div>
+            </a>
+
+            <!-- 3. Hardware, Mixers e Interfaces -->
+            <a href="hardware_y_micr_fonos.html" class="card-transition glow-effect bg-studio-800/80 border border-studio-700 hover:border-indigo-500/50 rounded-2xl p-6 flex flex-col justify-between group">
+                <div>
+                    <div class="flex items-center justify-between mb-4">
+                        <div class="w-12 h-12 rounded-xl bg-indigo-500/10 text-indigo-400 flex items-center justify-center border border-indigo-500/20 group-hover:scale-110 transition-transform">
+                            <i class="fa-solid fa-microphone-lines text-xl"></i>
+                        </div>
+                        <span class="text-xs font-mono text-gray-400 bg-studio-900 px-2.5 py-1 rounded-md border border-studio-700">Módulo 03</span>
+                    </div>
+                    <h3 class="text-lg font-bold text-white group-hover:text-indigo-400 transition-colors mb-2">Hardware, Mixers e Interfaces</h3>
+                    <p class="text-xs text-gray-400 leading-relaxed">
+                        Diferencias entre interfaces y mixers, tipos de cápsulas (dinámico vs condensador), componentes y la importancia vital del Phantom Power 48V.
+                    </p>
+                </div>
+                <div class="mt-6 pt-4 border-t border-studio-700/60 flex items-center justify-between text-xs font-medium text-indigo-400">
+                    <span>Abrir simulador</span>
+                    <i class="fa-solid fa-arrow-right group-hover:translate-x-1 transition-transform"></i>
+                </div>
+            </a>
+
+            <!-- 4. Simulador de Compresor de Audio -->
+            <a href="simulador_de_compresor_de_audio.html" class="card-transition glow-effect bg-studio-800/80 border border-studio-700 hover:border-sky-500/50 rounded-2xl p-6 flex flex-col justify-between group">
+                <div>
+                    <div class="flex items-center justify-between mb-4">
+                        <div class="w-12 h-12 rounded-xl bg-sky-500/10 text-sky-400 flex items-center justify-center border border-sky-500/20 group-hover:scale-110 transition-transform">
+                            <i class="fa-solid fa-compress text-xl"></i>
+                        </div>
+                        <span class="text-xs font-mono text-gray-400 bg-studio-900 px-2.5 py-1 rounded-md border border-studio-700">Módulo 04</span>
+                    </div>
+                    <h3 class="text-lg font-bold text-white group-hover:text-sky-400 transition-colors mb-2">Compresor de Audio</h3>
+                    <p class="text-xs text-gray-400 leading-relaxed">
+                        Visualiza la curva de transferencia, reducción de ganancia en tiempo real y el comportamiento de Threshold, Ratio, Attack y Release.
+                    </p>
+                </div>
+                <div class="mt-6 pt-4 border-t border-studio-700/60 flex items-center justify-between text-xs font-medium text-sky-400">
+                    <span>Abrir simulador</span>
+                    <i class="fa-solid fa-arrow-right group-hover:translate-x-1 transition-transform"></i>
+                </div>
+            </a>
+
+            <!-- 5. Simulador de Ecualizador Paramétrico -->
+            <a href="simulador_de_ecualizador_param_trico.html" class="card-transition glow-effect bg-studio-800/80 border border-studio-700 hover:border-purple-500/50 rounded-2xl p-6 flex flex-col justify-between group">
+                <div>
+                    <div class="flex items-center justify-between mb-4">
+                        <div class="w-12 h-12 rounded-xl bg-purple-500/10 text-purple-400 flex items-center justify-center border border-purple-500/20 group-hover:scale-110 transition-transform">
+                            <i class="fa-solid fa-chart-line text-xl"></i>
+                        </div>
+                        <span class="text-xs font-mono text-gray-400 bg-studio-900 px-2.5 py-1 rounded-md border border-studio-700">Módulo 05</span>
+                    </div>
+                    <h3 class="text-lg font-bold text-white group-hover:text-purple-400 transition-colors mb-2">Ecualizador Paramétrico</h3>
+                    <p class="text-xs text-gray-400 leading-relaxed">
+                        Manipula frecuencias, ganancia (dB) y factor Q (ancho de banda) viendo en tiempo real la curva de respuesta sobre el espectro.
+                    </p>
+                </div>
+                <div class="mt-6 pt-4 border-t border-studio-700/60 flex items-center justify-between text-xs font-medium text-purple-400">
+                    <span>Abrir simulador</span>
+                    <i class="fa-solid fa-arrow-right group-hover:translate-x-1 transition-transform"></i>
+                </div>
+            </a>
+
+            <!-- 6. Simulador de Limitador de Audio -->
+            <a href="simulador_de_limitador_de_audio.html" class="card-transition glow-effect bg-studio-800/80 border border-studio-700 hover:border-amber-500/50 rounded-2xl p-6 flex flex-col justify-between group">
+                <div>
+                    <div class="flex items-center justify-between mb-4">
+                        <div class="w-12 h-12 rounded-xl bg-amber-500/10 text-amber-400 flex items-center justify-center border border-amber-500/20 group-hover:scale-110 transition-transform">
+                            <i class="fa-solid fa-gauge-high text-xl"></i>
+                        </div>
+                        <span class="text-xs font-mono text-gray-400 bg-studio-900 px-2.5 py-1 rounded-md border border-studio-700">Módulo 06</span>
+                    </div>
+                    <h3 class="text-lg font-bold text-white group-hover:text-amber-400 transition-colors mb-2">Limitador (Brickwall)</h3>
+                    <p class="text-xs text-gray-400 leading-relaxed">
+                        Comprende cómo un limitador actúa como barrera estricta para evitar la saturación digital controlando picos máximos (Ceiling).
+                    </p>
+                </div>
+                <div class="mt-6 pt-4 border-t border-studio-700/60 flex items-center justify-between text-xs font-medium text-amber-400">
+                    <span>Abrir simulador</span>
+                    <i class="fa-solid fa-arrow-right group-hover:translate-x-1 transition-transform"></i>
+                </div>
+            </a>
+
+            <!-- 7. Simulador de Puerta de Ruido -->
+            <a href="simulador_de_puerta_de_ruido.html" class="card-transition glow-effect bg-studio-800/80 border border-studio-700 hover:border-emerald-500/50 rounded-2xl p-6 flex flex-col justify-between group">
+                <div>
+                    <div class="flex items-center justify-between mb-4">
+                        <div class="w-12 h-12 rounded-xl bg-emerald-500/10 text-emerald-400 flex items-center justify-center border border-emerald-500/20 group-hover:scale-110 transition-transform">
+                            <i class="fa-solid fa-door-open text-xl"></i>
+                        </div>
+                        <span class="text-xs font-mono text-gray-400 bg-studio-900 px-2.5 py-1 rounded-md border border-studio-700">Módulo 07</span>
+                    </div>
+                    <h3 class="text-lg font-bold text-white group-hover:text-emerald-400 transition-colors mb-2">Puerta de Ruido (Gate)</h3>
+                    <p class="text-xs text-gray-400 leading-relaxed">
+                        Aprende a limpiar el ruido de fondo silenciando la señal por debajo de un umbral específico con controles de rango y liberación.
+                    </p>
+                </div>
+                <div class="mt-6 pt-4 border-t border-studio-700/60 flex items-center justify-between text-xs font-medium text-emerald-400">
+                    <span>Abrir simulador</span>
+                    <i class="fa-solid fa-arrow-right group-hover:translate-x-1 transition-transform"></i>
+                </div>
+            </a>
+
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-studio-800 border-t border-studio-700/60 py-6 mt-12 text-center text-xs text-gray-400">
+        <p>Plataforma de capacitación interactiva desarrollada por <strong>FnxDubStudio</strong>.</p>
+        <p class="mt-1 text-gray-500">Todos los derechos reservados</p>
+    </footer>
+
+</body>
+</html>
