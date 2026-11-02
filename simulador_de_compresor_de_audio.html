@@ -1,0 +1,443 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simulador de Compresor de Audio</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Estilos personalizados para los sliders para un look más profesional */
+        input[type=range] {
+            -webkit-appearance: none;
+            width: 100%;
+            background: transparent;
+        }
+        input[type=range]:focus {
+            outline: none;
+        }
+        input[type=range]::-webkit-slider-runnable-track {
+            width: 100%;
+            height: 6px;
+            cursor: pointer;
+            background: #374151; /* gray-700 */
+            border-radius: 9999px;
+        }
+        input[type=range]::-webkit-slider-thumb {
+            height: 16px;
+            width: 16px;
+            border-radius: 50%;
+            background: #06b6d4; /* cyan-500 */
+            cursor: pointer;
+            -webkit-appearance: none;
+            margin-top: -5px;
+            box-shadow: 0 0 10px rgba(6, 182, 212, 0.5);
+            transition: transform 0.1s;
+        }
+        input[type=range]::-webkit-slider-thumb:hover {
+            transform: scale(1.2);
+        }
+        input[type=range]::-moz-range-track {
+            width: 100%;
+            height: 6px;
+            cursor: pointer;
+            background: #374151;
+            border-radius: 9999px;
+        }
+        input[type=range]::-moz-range-thumb {
+            height: 16px;
+            width: 16px;
+            border-radius: 50%;
+            background: #06b6d4;
+            cursor: pointer;
+            border: none;
+            box-shadow: 0 0 10px rgba(6, 182, 212, 0.5);
+        }
+    </style>
+</head>
+<body class="bg-gray-900 text-gray-200 font-sans min-h-screen p-4 md:p-8 selection:bg-cyan-500 selection:text-white">
+
+    <div class="max-w-7xl mx-auto">
+        
+        <header class="mb-8 border-b border-gray-800 pb-4">
+            <h1 class="text-3xl font-bold text-white mb-2 tracking-tight">Compresor de Audio Visual</h1>
+            <p class="text-gray-400">Entiende cómo afectan los parámetros al sonido interactuando con los controles y observando las gráficas en tiempo real.</p>
+        </header>
+
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
+            
+            <!-- PANEL DE CONTROL -->
+            <div class="lg:col-span-4 space-y-6 bg-gray-800 p-6 rounded-2xl shadow-xl border border-gray-700">
+                <h2 class="text-xl font-semibold text-white mb-4 flex items-center">
+                    <svg class="w-5 h-5 mr-2 text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"></path></svg>
+                    Controles
+                </h2>
+
+                <!-- Threshold -->
+                <div class="control-group">
+                    <div class="flex justify-between mb-1">
+                        <label class="font-medium text-gray-200">Umbral (Threshold)</label>
+                        <span id="val-threshold" class="text-cyan-400 font-mono">-20 dB</span>
+                    </div>
+                    <input type="range" id="threshold" min="-60" max="0" step="1" value="-20">
+                    <p class="text-xs text-gray-400 mt-2">Nivel en decibelios a partir del cual el compresor empieza a actuar. Señales por debajo de este nivel no se comprimen.</p>
+                </div>
+
+                <!-- Ratio -->
+                <div class="control-group">
+                    <div class="flex justify-between mb-1">
+                        <label class="font-medium text-gray-200">Proporción (Ratio)</label>
+                        <span id="val-ratio" class="text-cyan-400 font-mono">4:1</span>
+                    </div>
+                    <input type="range" id="ratio" min="1" max="20" step="0.5" value="4">
+                    <p class="text-xs text-gray-400 mt-2">Cuánto se reduce la señal que supera el umbral. 4:1 significa que por cada 4dB que pasen, solo saldrá 1dB.</p>
+                </div>
+
+                <!-- Attack -->
+                <div class="control-group">
+                    <div class="flex justify-between mb-1">
+                        <label class="font-medium text-gray-200">Ataque (Attack)</label>
+                        <span id="val-attack" class="text-cyan-400 font-mono">10 ms</span>
+                    </div>
+                    <input type="range" id="attack" min="1" max="100" step="1" value="10">
+                    <p class="text-xs text-gray-400 mt-2">Tiempo que tarda el compresor en aplicar la reducción total una vez superado el umbral. Tiempos altos dejan pasar el "golpe" inicial (transitorio).</p>
+                </div>
+
+                <!-- Release -->
+                <div class="control-group">
+                    <div class="flex justify-between mb-1">
+                        <label class="font-medium text-gray-200">Liberación (Release)</label>
+                        <span id="val-release" class="text-cyan-400 font-mono">100 ms</span>
+                    </div>
+                    <input type="range" id="release" min="10" max="1000" step="10" value="100">
+                    <p class="text-xs text-gray-400 mt-2">Tiempo que tarda en dejar de comprimir cuando la señal cae por debajo del umbral. Afecta la cola del sonido.</p>
+                </div>
+
+                <!-- Makeup Gain -->
+                <div class="control-group">
+                    <div class="flex justify-between mb-1">
+                        <label class="font-medium text-gray-200">Ganancia (Makeup Gain)</label>
+                        <span id="val-makeup" class="text-cyan-400 font-mono">0 dB</span>
+                    </div>
+                    <input type="range" id="makeup" min="0" max="24" step="1" value="0">
+                    <p class="text-xs text-gray-400 mt-2">Aumento de volumen general aplicado al final para compensar la pérdida de nivel causada por la compresión.</p>
+                </div>
+            </div>
+
+            <!-- VISUALIZACIONES -->
+            <div class="lg:col-span-8 flex flex-col gap-6">
+                
+                <!-- Curva de Transferencia -->
+                <div class="bg-gray-800 p-4 md:p-6 rounded-2xl shadow-xl border border-gray-700">
+                    <h3 class="text-lg font-medium text-white mb-2 flex items-center">
+                        Curva de Transferencia
+                    </h3>
+                    <p class="text-sm text-gray-400 mb-4">Muestra la relación entre la entrada (Input) y la salida (Output). El punto de quiebre es el Umbral.</p>
+                    <div class="relative w-full h-64 bg-gray-900 rounded-lg border border-gray-700 overflow-hidden" id="canvas-container-transfer">
+                        <canvas id="canvas-transfer" class="absolute top-0 left-0 w-full h-full"></canvas>
+                    </div>
+                </div>
+
+                <!-- Onda de Audio -->
+                <div class="bg-gray-800 p-4 md:p-6 rounded-2xl shadow-xl border border-gray-700">
+                    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-2">
+                        <h3 class="text-lg font-medium text-white flex items-center">
+                            Forma de Onda (Simulación)
+                        </h3>
+                        <div class="flex items-center gap-4 text-xs mt-2 sm:mt-0 font-medium">
+                            <span class="flex items-center gap-1"><span class="w-3 h-3 rounded-full bg-gray-500"></span> Original</span>
+                            <span class="flex items-center gap-1"><span class="w-3 h-3 rounded-full bg-cyan-500 shadow-[0_0_8px_#06b6d4]"></span> Comprimida</span>
+                        </div>
+                    </div>
+                    <p class="text-sm text-gray-400 mb-4">Visualización en tiempo real del efecto de los parámetros sobre los picos (transitorios) de un audio de ejemplo.</p>
+                    <div class="relative w-full h-64 bg-gray-900 rounded-lg border border-gray-700 overflow-hidden" id="canvas-container-waveform">
+                        <canvas id="canvas-waveform" class="absolute top-0 left-0 w-full h-full"></canvas>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // --- ESTADO DEL COMPRESOR ---
+        const state = {
+            threshold: -20,
+            ratio: 4,
+            attack: 10,
+            release: 100,
+            makeup: 0
+        };
+
+        // --- REFERENCIAS DOM ---
+        const els = {
+            threshold: document.getElementById('threshold'),
+            ratio: document.getElementById('ratio'),
+            attack: document.getElementById('attack'),
+            release: document.getElementById('release'),
+            makeup: document.getElementById('makeup'),
+            valThreshold: document.getElementById('val-threshold'),
+            valRatio: document.getElementById('val-ratio'),
+            valAttack: document.getElementById('val-attack'),
+            valRelease: document.getElementById('val-release'),
+            valMakeup: document.getElementById('val-makeup'),
+            canvasTransfer: document.getElementById('canvas-transfer'),
+            canvasWaveform: document.getElementById('canvas-waveform'),
+            containerTransfer: document.getElementById('canvas-container-transfer'),
+            containerWaveform: document.getElementById('canvas-container-waveform'),
+        };
+
+        const ctxTransfer = els.canvasTransfer.getContext('2d');
+        const ctxWaveform = els.canvasWaveform.getContext('2d');
+
+        // --- DATOS DE ONDA SIMULADA ---
+        const SAMPLES = 1000; 
+        const originalSignal = new Float32Array(SAMPLES);
+        
+        // Generar una señal de audio falsa (como golpes de batería)
+        function generateSignal() {
+            for (let i = 0; i < SAMPLES; i++) {
+                let t = i / 1000; // Asumimos 1000Hz como "sample rate" visual
+                // Ruido de fondo muy bajo
+                let val = (Math.random() * 2 - 1) * 0.02;
+                
+                // Transitorio 1 (Fuerte y rápido)
+                if (i >= 100) val += Math.sin(2 * Math.PI * 150 * t) * Math.exp(-(i - 100) / 15) * 0.9;
+                
+                // Transitorio 2 (Medio)
+                if (i >= 400) val += Math.sin(2 * Math.PI * 250 * t) * Math.exp(-(i - 400) / 25) * 0.6;
+                
+                // Transitorio 3 (Muy fuerte y más largo)
+                if (i >= 700) val += Math.sin(2 * Math.PI * 100 * t) * Math.exp(-(i - 700) / 30) * 1.0;
+
+                originalSignal[i] = val;
+            }
+        }
+        generateSignal();
+
+        // --- ACTUALIZACIÓN DE EVENTOS ---
+        function updateState() {
+            state.threshold = parseFloat(els.threshold.value);
+            state.ratio = parseFloat(els.ratio.value);
+            state.attack = parseFloat(els.attack.value);
+            state.release = parseFloat(els.release.value);
+            state.makeup = parseFloat(els.makeup.value);
+
+            els.valThreshold.innerText = `${state.threshold} dB`;
+            els.valRatio.innerText = `${state.ratio}:1`;
+            els.valAttack.innerText = `${state.attack} ms`;
+            els.valRelease.innerText = `${state.release} ms`;
+            els.valMakeup.innerText = `+${state.makeup} dB`;
+
+            drawTransfer();
+            drawWaveform();
+        }
+
+        ['input', 'change'].forEach(evt => {
+            els.threshold.addEventListener(evt, updateState);
+            els.ratio.addEventListener(evt, updateState);
+            els.attack.addEventListener(evt, updateState);
+            els.release.addEventListener(evt, updateState);
+            els.makeup.addEventListener(evt, updateState);
+        });
+
+        // --- FUNCIONES DE DIBUJO ---
+
+        function resizeCanvas() {
+            els.canvasTransfer.width = els.containerTransfer.clientWidth;
+            els.canvasTransfer.height = els.containerTransfer.clientHeight;
+            
+            els.canvasWaveform.width = els.containerWaveform.clientWidth;
+            els.canvasWaveform.height = els.containerWaveform.clientHeight;
+            
+            drawTransfer();
+            drawWaveform();
+        }
+        window.addEventListener('resize', resizeCanvas);
+
+        // Dibujar Curva de Transferencia
+        function drawTransfer() {
+            const w = els.canvasTransfer.width;
+            const h = els.canvasTransfer.height;
+            const ctx = ctxTransfer;
+
+            ctx.clearRect(0, 0, w, h);
+
+            const minDb = -60;
+            const maxDb = 10;
+            const rangeDb = maxDb - minDb;
+
+            // Función para mapear dB a coordenadas del canvas
+            const mapX = (db) => ((db - minDb) / rangeDb) * w;
+            const mapY = (db) => h - (((db - minDb) / rangeDb) * h);
+
+            // 1. Dibujar Cuadrícula y Ejes
+            ctx.strokeStyle = '#374151'; // gray-700
+            ctx.lineWidth = 1;
+            ctx.beginPath();
+            for (let db = minDb; db <= maxDb; db += 10) {
+                let x = mapX(db);
+                let y = mapY(db);
+                // Lineas verticales
+                ctx.moveTo(x, 0); ctx.lineTo(x, h);
+                // Lineas horizontales
+                ctx.moveTo(0, y); ctx.lineTo(w, y);
+            }
+            ctx.stroke();
+
+            // Textos de ejes
+            ctx.fillStyle = '#9CA3AF'; // gray-400
+            ctx.font = '10px sans-serif';
+            ctx.fillText("Input (dB)", w - 60, h - 10);
+            ctx.fillText("Output (dB)", 10, 20);
+
+            // 2. Dibujar Linea 1:1 (Referencia sin compresión)
+            ctx.strokeStyle = '#4B5563'; // gray-600
+            ctx.setLineDash([5, 5]);
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.moveTo(mapX(minDb), mapY(minDb));
+            ctx.lineTo(mapX(maxDb), mapY(maxDb));
+            ctx.stroke();
+            ctx.setLineDash([]); // Resetear dashes
+
+            // 3. Dibujar Curva Real de Compresión
+            ctx.strokeStyle = '#06b6d4'; // cyan-500
+            ctx.lineWidth = 3;
+            ctx.lineJoin = 'round';
+            ctx.beginPath();
+
+            for (let inDb = minDb; inDb <= maxDb; inDb += 0.5) {
+                let outDb = inDb;
+                // Aplicar umbral y ratio
+                if (inDb > state.threshold) {
+                    outDb = state.threshold + (inDb - state.threshold) / state.ratio;
+                }
+                // Aplicar makeup gain
+                outDb += state.makeup;
+                
+                let cx = mapX(inDb);
+                let cy = mapY(outDb);
+
+                if (inDb === minDb) ctx.moveTo(cx, cy);
+                else ctx.lineTo(cx, cy);
+            }
+            ctx.stroke();
+
+            // 4. Dibujar Punto de Umbral (Knee)
+            let kneeX = mapX(state.threshold);
+            let kneeY = mapY(state.threshold + state.makeup);
+            ctx.fillStyle = '#fff';
+            ctx.beginPath();
+            ctx.arc(kneeX, kneeY, 5, 0, Math.PI * 2);
+            ctx.fill();
+        }
+
+        // Simular cálculo de compresión sobre la onda y dibujar
+        function drawWaveform() {
+            const w = els.canvasWaveform.width;
+            const h = els.canvasWaveform.height;
+            const ctx = ctxWaveform;
+
+            ctx.clearRect(0, 0, w, h);
+
+            const compressedSignal = new Float32Array(SAMPLES);
+            
+            // Constantes de tiempo (simplificadas para efecto visual)
+            // Usamos un factor exagerado visualmente para que se note en el canvas corto
+            const dt = 1.0 / 1000.0; 
+            const attackTime = (state.attack * 2) / 1000.0; // Multiplicador para acentuar visualmente
+            const releaseTime = (state.release * 2) / 1000.0;
+            
+            const attackCoeff = Math.exp(-dt / attackTime);
+            const releaseCoeff = Math.exp(-dt / releaseTime);
+
+            let currentGainReductionDb = 0;
+
+            // Procesar señal
+            for (let i = 0; i < SAMPLES; i++) {
+                let inputLin = Math.abs(originalSignal[i]);
+                let inputDb = inputLin > 0.00001 ? 20 * Math.log10(inputLin) : -100; // Evitar -Infinity
+                
+                // Calcular reducción de ganancia objetivo (Target GR)
+                let overThresholdDb = inputDb - state.threshold;
+                let targetGrDb = 0;
+                
+                if (overThresholdDb > 0) {
+                    // Cuántos dB de reducción se necesitan según el ratio
+                    targetGrDb = overThresholdDb * (1.0 - (1.0 / state.ratio)); 
+                }
+
+                // Aplicar balística (Ataque y Liberación - Envelope Follower)
+                if (targetGrDb > currentGainReductionDb) {
+                    // Fase de Ataque
+                    currentGainReductionDb = attackCoeff * currentGainReductionDb + (1 - attackCoeff) * targetGrDb;
+                } else {
+                    // Fase de Liberación
+                    currentGainReductionDb = releaseCoeff * currentGainReductionDb + (1 - releaseCoeff) * targetGrDb;
+                }
+
+                // Aplicar reducción suavizada y ganancia final
+                let outputDb = inputDb - currentGainReductionDb + state.makeup;
+                
+                // Limitar salida visualmente a +10dB arriba del máx simulado para que no estalle la gráfica
+                if (outputDb > 20) outputDb = 20;
+
+                // Volver a lineal manteniendo la fase original
+                let outputLin = Math.pow(10, outputDb / 20) * (originalSignal[i] >= 0 ? 1 : -1);
+                
+                // Si la señal original era cero, mantenerla en cero
+                if (inputLin === 0) outputLin = 0;
+
+                compressedSignal[i] = outputLin;
+            }
+
+            // Función interna para dibujar un array de señal
+            function drawPath(signalArray, colorStr, lineWidth, isGlow) {
+                ctx.beginPath();
+                ctx.strokeStyle = colorStr;
+                ctx.lineWidth = lineWidth;
+                
+                if (isGlow) {
+                    ctx.shadowBlur = 10;
+                    ctx.shadowColor = colorStr;
+                } else {
+                    ctx.shadowBlur = 0;
+                }
+
+                const centerY = h / 2;
+                // Rango lineal para el dibujo: -1.5 a 1.5 para dar espacio al makeup
+                const amplitudeLimit = 1.5; 
+
+                for (let i = 0; i < SAMPLES; i++) {
+                    let x = (i / SAMPLES) * w;
+                    let y = centerY - (signalArray[i] / amplitudeLimit) * (h / 2);
+                    
+                    if (i === 0) ctx.moveTo(x, y);
+                    else ctx.lineTo(x, y);
+                }
+                ctx.stroke();
+                ctx.shadowBlur = 0; // Resetear
+            }
+
+            // Eje central
+            ctx.beginPath();
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.1)';
+            ctx.moveTo(0, h/2); ctx.lineTo(w, h/2);
+            ctx.stroke();
+
+            // Dibujar Original (Gris translúcido)
+            drawPath(originalSignal, 'rgba(107, 114, 128, 0.6)', 2, false);
+
+            // Dibujar Comprimida (Cyan vibrante)
+            drawPath(compressedSignal, '#06b6d4', 2.5, true);
+        }
+
+        // Inicializar
+        setTimeout(() => {
+            resizeCanvas();
+            updateState();
+        }, 100);
+
+    </script>
+</body>
+</html>

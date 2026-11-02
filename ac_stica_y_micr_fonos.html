@@ -1,0 +1,581 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Acústica y Captación de Audio</title>
+    
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Roboto+Mono:wght@400;500&display=swap" rel="stylesheet">
+    
+    <!-- FontAwesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        mono: ['Roboto Mono', 'monospace'],
+                    },
+                    colors: {
+                        gray: {
+                            850: '#1f2937',
+                            900: '#111827',
+                            950: '#030712',
+                        },
+                        teal: {
+                            400: '#2dd4bf',
+                            500: '#14b8a6',
+                        },
+                        violet: {
+                            400: '#a78bfa',
+                            500: '#8b5cf6',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        body {
+            background-color: #111827;
+            color: #e5e7eb;
+            overflow-x: hidden;
+        }
+
+        /* Custom Toggle Switch for Treatment */
+        .toggle-checkbox:checked {
+            right: 0;
+            border-color: #14b8a6;
+        }
+        .toggle-checkbox:checked + .toggle-label {
+            background-color: #14b8a6;
+        }
+        .toggle-checkbox {
+            right: 4px;
+            z-index: 1;
+            border-color: #4b5563;
+            transition: all 0.3s;
+        }
+        .toggle-label {
+            background-color: #374151;
+            transition: all 0.3s;
+        }
+
+        /* Mic Pattern Radio Buttons */
+        .pattern-tab input:checked + div {
+            background-color: #8b5cf6;
+            color: #fff;
+            border-color: #8b5cf6;
+            box-shadow: 0 0 15px rgba(139, 92, 246, 0.4);
+        }
+
+        /* VU Meter Gradient */
+        .vu-fill {
+            transition: height 0.1s ease-out;
+            background: linear-gradient(to top, #10b981 0%, #f59e0b 75%, #ef4444 100%);
+        }
+        
+        canvas {
+            display: block;
+            width: 100%;
+            height: 100%;
+        }
+    </style>
+</head>
+<body class="antialiased min-h-screen p-4 md:p-8 flex flex-col items-center">
+
+    <header class="w-full max-w-7xl mb-8 text-center md:text-left border-b border-gray-800 pb-6">
+        <h1 class="text-3xl md:text-4xl font-bold text-white tracking-tight">Comportamiento Acústico y Captación</h1>
+        <p class="text-gray-400 mt-2 text-lg max-w-4xl">Laboratorio visual interactivo para comprender cómo se propaga el sonido en un espacio físico y cómo los diferentes micrófonos "ven" ese sonido según su patrón polar.</p>
+    </header>
+
+    <main class="w-full max-w-7xl grid grid-cols-1 xl:grid-cols-2 gap-8">
+
+        <!-- ========================================== -->
+        <!-- SECCIÓN 1: ACÚSTICA DE LA HABITACIÓN (TEAL)-->
+        <!-- ========================================== -->
+        <section class="bg-gray-850 rounded-2xl border border-gray-700 shadow-2xl flex flex-col overflow-hidden">
+            
+            <!-- Cabecera Sección 1 -->
+            <div class="p-6 border-b border-gray-700 bg-gray-800/50">
+                <h2 class="text-2xl font-semibold text-white mb-2 flex items-center gap-3">
+                    <i class="fa-solid fa-person-shelter text-teal-400"></i>
+                    Acústica y Tratamiento
+                </h2>
+                <p class="text-sm text-gray-400">
+                    Las ondas sonoras rebotan en las paredes creando reflexiones que ensucian el sonido (Reverberación/Eco flotante). El tratamiento acústico absorbe esta energía.
+                </p>
+            </div>
+
+            <!-- Controles Sección 1 -->
+            <div class="p-6 flex flex-wrap items-center justify-between gap-4 bg-gray-850">
+                <button id="btn-clap" class="bg-teal-500 hover:bg-teal-400 text-gray-900 font-bold py-2 px-6 rounded-lg transition-all shadow-[0_0_15px_rgba(20,184,166,0.4)] active:scale-95 flex items-center gap-2">
+                    <i class="fa-solid fa-hands-clapping"></i> Emitir Sonido (Clap)
+                </button>
+
+                <div class="flex items-center gap-3">
+                    <span class="text-sm font-medium text-gray-300">Tratamiento Acústico</span>
+                    <div class="relative inline-block w-12 mr-2 align-middle select-none transition duration-200 ease-in">
+                        <input type="checkbox" name="toggle" id="toggle-treatment" class="toggle-checkbox absolute block w-6 h-6 rounded-full bg-white border-4 appearance-none cursor-pointer top-0 bottom-0 m-auto"/>
+                        <label for="toggle-treatment" class="toggle-label block overflow-hidden h-6 rounded-full bg-gray-300 cursor-pointer"></label>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Canvas Sección 1 -->
+            <div class="flex-grow p-6 pt-0 bg-gray-850 flex justify-center items-center">
+                <div class="w-full max-w-[500px] aspect-square bg-gray-950 rounded-lg border-2 border-gray-600 relative overflow-hidden shadow-inner" id="container-room">
+                    <!-- Paredes con tratamiento (ocultas por defecto) -->
+                    <div id="panels" class="absolute inset-0 opacity-0 transition-opacity duration-500 pointer-events-none">
+                        <div class="absolute top-0 left-4 right-4 h-3 bg-teal-500/80 rounded-b-md"></div>
+                        <div class="absolute bottom-0 left-4 right-4 h-3 bg-teal-500/80 rounded-t-md"></div>
+                        <div class="absolute left-0 top-4 bottom-4 w-3 bg-teal-500/80 rounded-r-md"></div>
+                        <div class="absolute right-0 top-4 bottom-4 w-3 bg-teal-500/80 rounded-l-md"></div>
+                        <!-- Trampas de graves en esquinas -->
+                        <div class="absolute top-0 left-0 w-8 h-8 bg-teal-600 rounded-br-full"></div>
+                        <div class="absolute top-0 right-0 w-8 h-8 bg-teal-600 rounded-bl-full"></div>
+                        <div class="absolute bottom-0 left-0 w-8 h-8 bg-teal-600 rounded-tr-full"></div>
+                        <div class="absolute bottom-0 right-0 w-8 h-8 bg-teal-600 rounded-tl-full"></div>
+                    </div>
+                    
+                    <canvas id="canvas-room" class="absolute inset-0"></canvas>
+                    
+                    <!-- Icono fuente -->
+                    <div class="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-gray-500 opacity-50 pointer-events-none">
+                        <i class="fa-solid fa-bullhorn text-2xl"></i>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+
+        <!-- ========================================== -->
+        <!-- SECCIÓN 2: MICRÓFONOS Y PATRONES (VIOLETA) -->
+        <!-- ========================================== -->
+        <section class="bg-gray-850 rounded-2xl border border-gray-700 shadow-2xl flex flex-col overflow-hidden">
+            
+            <!-- Cabecera Sección 2 -->
+            <div class="p-6 border-b border-gray-700 bg-gray-800/50">
+                <h2 class="text-2xl font-semibold text-white mb-2 flex items-center gap-3">
+                    <i class="fa-solid fa-microphone-lines text-violet-400"></i>
+                    Patrones Polares
+                </h2>
+                <p class="text-sm text-gray-400">
+                    Selecciona un patrón y mueve el ratón (o toca) alrededor del gráfico central. El Vúmetro simulará cuánta señal captura el micrófono según tu ángulo de incidencia.
+                </p>
+            </div>
+
+            <!-- Controles Sección 2 -->
+            <div class="p-4 bg-gray-900 border-b border-gray-800">
+                <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                    <label class="pattern-tab cursor-pointer relative">
+                        <input type="radio" name="pattern" value="omni" class="peer sr-only">
+                        <div class="px-2 py-2 text-xs md:text-sm text-center font-semibold text-gray-400 border border-gray-700 rounded-md transition-all peer-hover:text-gray-200">Omnidireccional</div>
+                    </label>
+                    <label class="pattern-tab cursor-pointer relative">
+                        <input type="radio" name="pattern" value="cardioid" class="peer sr-only" checked>
+                        <div class="px-2 py-2 text-xs md:text-sm text-center font-semibold text-gray-400 border border-gray-700 rounded-md transition-all peer-hover:text-gray-200">Cardioide</div>
+                    </label>
+                    <label class="pattern-tab cursor-pointer relative">
+                        <input type="radio" name="pattern" value="figure8" class="peer sr-only">
+                        <div class="px-2 py-2 text-xs md:text-sm text-center font-semibold text-gray-400 border border-gray-700 rounded-md transition-all peer-hover:text-gray-200">Figura en 8</div>
+                    </label>
+                    <label class="pattern-tab cursor-pointer relative">
+                        <input type="radio" name="pattern" value="shotgun" class="peer sr-only">
+                        <div class="px-2 py-2 text-xs md:text-sm text-center font-semibold text-gray-400 border border-gray-700 rounded-md transition-all peer-hover:text-gray-200">Shotgun</div>
+                    </label>
+                </div>
+            </div>
+
+            <!-- Canvas y Vumetro Sección 2 -->
+            <div class="p-6 bg-gray-850 flex flex-col sm:flex-row gap-6 items-center justify-center relative">
+                
+                <!-- Canvas Gráfico Polar -->
+                <div class="w-full max-w-[350px] aspect-square relative rounded-full border border-gray-700 bg-gray-900 shadow-inner" id="container-mic" style="cursor: crosshair;">
+                    <canvas id="canvas-mic" class="absolute inset-0 rounded-full"></canvas>
+                    <div class="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 pointer-events-none z-10 bg-gray-800 rounded-full p-2 border border-gray-600 shadow-lg">
+                        <i class="fa-solid fa-microphone text-violet-400 text-xl"></i>
+                    </div>
+                </div>
+
+                <!-- Vúmetro -->
+                <div class="flex flex-col items-center h-[300px] w-16 bg-gray-900 rounded-xl border border-gray-700 p-2 shadow-inner">
+                    <span class="text-[10px] font-mono text-gray-400 mb-2">IN</span>
+                    <div class="w-full flex-grow bg-gray-950 rounded border border-gray-800 relative overflow-hidden">
+                        <div id="mic-vu" class="absolute bottom-0 left-0 w-full vu-fill shadow-[0_0_10px_rgba(16,185,129,0.5)]" style="height: 0%;"></div>
+                    </div>
+                    <span id="mic-db-text" class="text-xs font-mono text-violet-400 mt-2">-∞</span>
+                </div>
+
+            </div>
+
+            <!-- Tarjetas Informativas Tipos de Micro -->
+            <div class="p-4 grid grid-cols-1 md:grid-cols-3 gap-4 bg-gray-900 mt-auto border-t border-gray-800">
+                <div class="bg-gray-800/50 p-3 rounded-lg border border-gray-700/50">
+                    <h4 class="text-violet-400 font-bold text-sm mb-1"><i class="fa-solid fa-podcast"></i> Dinámicos</h4>
+                    <p class="text-xs text-gray-400 leading-relaxed">Baja sensibilidad. Excelentes para aislar ruido de fondo. Estándar en radio, podcasts y directos musicales (Ej. SM7B, SM58).</p>
+                </div>
+                <div class="bg-gray-800/50 p-3 rounded-lg border border-gray-700/50">
+                    <h4 class="text-violet-400 font-bold text-sm mb-1"><i class="fa-solid fa-music"></i> Condensador</h4>
+                    <p class="text-xs text-gray-400 leading-relaxed">Alta sensibilidad y detalle. Requieren Phantom Power (48V). Estándar en estudios para voz en off, doblaje y música acústica.</p>
+                </div>
+                <div class="bg-gray-800/50 p-3 rounded-lg border border-gray-700/50">
+                    <h4 class="text-violet-400 font-bold text-sm mb-1"><i class="fa-solid fa-video"></i> Shotgun</h4>
+                    <p class="text-xs text-gray-400 leading-relaxed">Tubo de interferencia. Rechazo lateral extremo. Se usa en pértigas (boompole) para cine, TV y grabación en exteriores.</p>
+                </div>
+            </div>
+
+        </section>
+
+    </main>
+
+    <!-- Scripts de Simulación -->
+    <script>
+        // Utilidades
+        function resizeCanvas(canvas) {
+            const rect = canvas.parentElement.getBoundingClientRect();
+            canvas.width = rect.width;
+            canvas.height = rect.height;
+            return { w: rect.width, h: rect.height };
+        }
+
+        // ==========================================
+        // LÓGICA SECCIÓN 1: ACÚSTICA (PARTÍCULAS)
+        // ==========================================
+        const roomCanvas = document.getElementById('canvas-room');
+        const roomCtx = roomCanvas.getContext('2d');
+        const btnClap = document.getElementById('btn-clap');
+        const toggleTreatment = document.getElementById('toggle-treatment');
+        const panelsUI = document.getElementById('panels');
+
+        let particles = [];
+        let roomW, roomH;
+
+        class Particle {
+            constructor(x, y, angle, speed) {
+                this.x = x;
+                this.y = y;
+                this.vx = Math.cos(angle) * speed;
+                this.vy = Math.sin(angle) * speed;
+                this.energy = 1.0; // 1.0 = Max, 0.0 = Dead
+                this.history = []; // Para dibujar estelas
+            }
+
+            update(hasTreatment) {
+                // Guardar historia para la estela
+                this.history.push({x: this.x, y: this.y});
+                if(this.history.length > 8) this.history.shift();
+
+                // Mover
+                this.x += this.vx;
+                this.y += this.vy;
+
+                let hit = false;
+                
+                // Rebotar en paredes
+                if (this.x < 0) { this.x = 0; this.vx *= -1; hit = true; }
+                if (this.x > roomW) { this.x = roomW; this.vx *= -1; hit = true; }
+                if (this.y < 0) { this.y = 0; this.vy *= -1; hit = true; }
+                if (this.y > roomH) { this.y = roomH; this.vy *= -1; hit = true; }
+
+                if (hit) {
+                    if (hasTreatment) {
+                        // El tratamiento absorbe el 90% de la energía de golpe
+                        this.energy -= 0.9; 
+                    } else {
+                        // Pared dura de yeso/cemento: absorbe muy poco, la onda sigue
+                        this.energy -= 0.15; 
+                    }
+                }
+
+                // Atenuación natural por el aire (distancia)
+                this.energy -= 0.003; 
+            }
+
+            draw(ctx) {
+                if(this.energy <= 0) return;
+
+                // Color basado en la energía (Blanco -> Amarillo -> Naranja -> Rojo -> Desaparece)
+                // Usamos HSL: Hue va de 60 (Amarillo) a 0 (Rojo). Lightness baja de 100% a 40%.
+                const hue = Math.max(0, (this.energy - 0.4) * 100); 
+                const lightness = 40 + (this.energy * 60);
+                const alpha = Math.max(0, this.energy);
+                
+                const color = `hsla(${hue}, 100%, ${lightness}%, ${alpha})`;
+
+                // Dibujar estela
+                if (this.history.length > 1) {
+                    ctx.beginPath();
+                    ctx.moveTo(this.history[0].x, this.history[0].y);
+                    for (let i = 1; i < this.history.length; i++) {
+                        ctx.lineTo(this.history[i].x, this.history[i].y);
+                    }
+                    ctx.strokeStyle = color;
+                    ctx.lineWidth = 2.5;
+                    ctx.lineCap = 'round';
+                    ctx.stroke();
+                }
+
+                // Dibujar cabeza
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, 2, 0, Math.PI * 2);
+                ctx.fillStyle = color;
+                ctx.fill();
+            }
+        }
+
+        btnClap.addEventListener('click', () => {
+            const { w, h } = resizeCanvas(roomCanvas);
+            roomW = w; roomH = h;
+            
+            // Generar 180 rayos (partículas) en todas direcciones
+            for (let i = 0; i < 360; i += 2) {
+                const angle = (i * Math.PI) / 180;
+                // Pequeña variación de velocidad para que no sea un círculo perfecto aburrido
+                const speed = 4 + Math.random() * 2; 
+                particles.push(new Particle(w/2, h/2, angle, speed));
+            }
+        });
+
+        toggleTreatment.addEventListener('change', (e) => {
+            if(e.target.checked) {
+                panelsUI.classList.remove('opacity-0');
+            } else {
+                panelsUI.classList.add('opacity-0');
+            }
+        });
+
+        function renderRoom() {
+            const { w, h } = resizeCanvas(roomCanvas);
+            roomW = w; roomH = h;
+            
+            // Efecto de desvanecimiento para dejar un pequeño rastro en el canvas
+            roomCtx.fillStyle = 'rgba(3, 7, 18, 0.3)'; // gray-950 con opacidad
+            roomCtx.fillRect(0, 0, w, h);
+
+            const hasTreatment = toggleTreatment.checked;
+
+            // Actualizar y dibujar partículas
+            for (let i = particles.length - 1; i >= 0; i--) {
+                const p = particles[i];
+                p.update(hasTreatment);
+                p.draw(roomCtx);
+                
+                if (p.energy <= 0) {
+                    particles.splice(i, 1);
+                }
+            }
+        }
+
+
+        // ==========================================
+        // LÓGICA SECCIÓN 2: MICRÓFONOS (PATRONES POLARES)
+        // ==========================================
+        const micCanvas = document.getElementById('canvas-mic');
+        const micCtx = micCanvas.getContext('2d');
+        const containerMic = document.getElementById('container-mic');
+        const radioPatterns = document.getElementsByName('pattern');
+        const vuMeter = document.getElementById('mic-vu');
+        const dbText = document.getElementById('mic-db-text');
+
+        let currentPattern = 'cardioid';
+        let mouseAngle = 0; // Radianes
+        let mouseDist = 0;
+        let smoothedGain = 0; // Para el efecto balístico del Vúmetro
+        
+        radioPatterns.forEach(r => r.addEventListener('change', (e) => {
+            currentPattern = e.target.value;
+        }));
+
+        // Rastrear posición del ratón sobre el canvas del micrófono
+        function updateMousePolar(e) {
+            const rect = micCanvas.getBoundingClientRect();
+            const cx = rect.width / 2;
+            const cy = rect.height / 2;
+            
+            let clientX = e.clientX;
+            let clientY = e.clientY;
+            
+            // Soporte para touch
+            if(e.touches && e.touches.length > 0) {
+                clientX = e.touches[0].clientX;
+                clientY = e.touches[0].clientY;
+            }
+
+            const dx = clientX - rect.left - cx;
+            const dy = clientY - rect.top - cy;
+            
+            // Calcular ángulo (0 grados en matemáticas es derecha, pero en micros 0 grados es Frente/Arriba)
+            // Rotamos el ángulo 90 grados (-PI/2) sumando PI/2 para que UP sea 0.
+            mouseAngle = Math.atan2(dy, dx) + (Math.PI / 2);
+            mouseDist = Math.sqrt(dx*dx + dy*dy);
+        }
+
+        containerMic.addEventListener('mousemove', updateMousePolar);
+        containerMic.addEventListener('touchmove', (e) => {
+            e.preventDefault(); // Prevenir scroll mientras se juega
+            updateMousePolar(e);
+        }, {passive: false});
+
+        // Fórmula maestra para calcular la ganancia (0.0 a 1.0) según el ángulo y el patrón
+        function getMicGain(pattern, theta) {
+            switch (pattern) {
+                case 'omni':
+                    return 1.0;
+                case 'cardioid':
+                    return 0.5 + 0.5 * Math.cos(theta);
+                case 'figure8':
+                    return Math.abs(Math.cos(theta));
+                case 'shotgun':
+                    // Aproximación de un patrón lobar (Super/Hyper cardioide extremo con lóbulo trasero pequeño)
+                    // (0.5 + 0.5cos)^2 da un frente direccional. Restar algo atrás crea el lóbulo negativo, usamos abs.
+                    let front = Math.pow(0.5 + 0.5 * Math.cos(theta), 2.5);
+                    let back = 0.15 * Math.pow(0.5 - 0.5 * Math.cos(theta), 3);
+                    return Math.min(1.0, front + back);
+                default:
+                    return 1.0;
+            }
+        }
+
+        function renderMic() {
+            const { w, h } = resizeCanvas(micCanvas);
+            micCtx.clearRect(0, 0, w, h);
+            
+            const cx = w / 2;
+            const cy = h / 2;
+            const maxRadius = (Math.min(w, h) / 2) * 0.85;
+
+            // 1. Dibujar Rejilla Polar (Fondo)
+            micCtx.strokeStyle = '#374151'; // gray-700
+            micCtx.lineWidth = 1;
+            
+            // Círculos concéntricos (-0dB, -5dB, -10dB, -20dB simulado espacialmente)
+            [1.0, 0.75, 0.5, 0.25].forEach(scale => {
+                micCtx.beginPath();
+                micCtx.arc(cx, cy, maxRadius * scale, 0, Math.PI * 2);
+                micCtx.stroke();
+            });
+
+            // Ejes (0, 90, 180, 270 grados)
+            micCtx.beginPath();
+            micCtx.moveTo(cx, cy - maxRadius); micCtx.lineTo(cx, cy + maxRadius);
+            micCtx.moveTo(cx - maxRadius, cy); micCtx.lineTo(cx + maxRadius, cy);
+            micCtx.stroke();
+            
+            // Etiquetas
+            micCtx.fillStyle = '#6b7280'; // gray-500
+            micCtx.font = '10px sans-serif';
+            micCtx.textAlign = 'center';
+            micCtx.fillText("0° (Frente)", cx, cy - maxRadius - 5);
+            micCtx.fillText("180°", cx, cy + maxRadius + 12);
+
+            // 2. Dibujar la Curva del Patrón Polar
+            micCtx.beginPath();
+            micCtx.strokeStyle = '#a78bfa'; // violet-400
+            micCtx.fillStyle = 'rgba(139, 92, 246, 0.2)'; // violet-500 trans
+            micCtx.lineWidth = 3;
+            
+            for (let a = 0; a <= Math.PI * 2; a += 0.05) {
+                let gain = getMicGain(currentPattern, a);
+                let r = gain * maxRadius;
+                
+                // Rotar -PI/2 al dibujar en canvas para que el ángulo 0 sea Arriba (Eje Y negativo)
+                let canvasAngle = a - (Math.PI / 2);
+                
+                let px = cx + Math.cos(canvasAngle) * r;
+                let py = cy + Math.sin(canvasAngle) * r;
+                
+                if (a === 0) micCtx.moveTo(px, py);
+                else micCtx.lineTo(px, py);
+            }
+            micCtx.closePath();
+            micCtx.fill();
+            micCtx.stroke();
+
+            // 3. Dibujar Indicador de Fuente (Ratón) y calcular captura
+            // Solo si el ratón está sobre o cerca del área
+            let targetGain = 0;
+            
+            if (mouseDist > 0 && mouseDist < cx * 1.5) {
+                // Dibujar línea desde el centro a la fuente
+                micCtx.beginPath();
+                micCtx.strokeStyle = 'rgba(20, 184, 166, 0.5)'; // teal-500
+                micCtx.setLineDash([5, 5]);
+                micCtx.lineWidth = 2;
+                micCtx.moveTo(cx, cy);
+                
+                // Limitar visualmente la línea al borde exterior
+                let canvasAngle = mouseAngle - (Math.PI / 2);
+                let lineX = cx + Math.cos(canvasAngle) * maxRadius;
+                let lineY = cy + Math.sin(canvasAngle) * maxRadius;
+                micCtx.lineTo(lineX, lineY);
+                micCtx.stroke();
+                micCtx.setLineDash([]);
+
+                // Dibujar icono de fuente (un puntito brillando)
+                micCtx.beginPath();
+                micCtx.arc(lineX, lineY, 6, 0, Math.PI * 2);
+                micCtx.fillStyle = '#2dd4bf'; // teal-400
+                micCtx.shadowBlur = 10;
+                micCtx.shadowColor = '#2dd4bf';
+                micCtx.fill();
+                micCtx.shadowBlur = 0;
+
+                // Calcular ganancia real
+                targetGain = getMicGain(currentPattern, mouseAngle);
+            }
+
+            // 4. Actualizar Vúmetro
+            // Suavizar la transición (balística)
+            smoothedGain += (targetGain - smoothedGain) * 0.15;
+            
+            // Actualizar UI del Vúmetro
+            vuMeter.style.height = `${smoothedGain * 100}%`;
+            
+            // Calcular dB simulados (-60 a 0)
+            if (smoothedGain < 0.01) {
+                dbText.innerText = '-∞ dB';
+            } else {
+                let db = 20 * Math.log10(smoothedGain);
+                dbText.innerText = (db >= 0 ? ' 0' : db.toFixed(1)) + ' dB';
+            }
+        }
+
+
+        // ==========================================
+        // LOOP PRINCIPAL DE ANIMACIÓN GLOBAL
+        // ==========================================
+        function animate() {
+            renderRoom();
+            renderMic();
+            requestAnimationFrame(animate);
+        }
+
+        // Iniciar
+        window.onload = () => {
+            // Un resize inicial forzado
+            resizeCanvas(roomCanvas);
+            resizeCanvas(micCanvas);
+            roomW = roomCanvas.width;
+            roomH = roomCanvas.height;
+            animate();
+        };
+
+        // Resize dinámico
+        window.addEventListener('resize', () => {
+            // Forzar actualización de dimensiones internas
+            roomW = roomCanvas.parentElement.clientWidth;
+            roomH = roomCanvas.parentElement.clientHeight;
+        });
+
+    </script>
+</body>
+</html>

@@ -1,0 +1,390 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simulador de Ecualizador Paramétrico</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Estilos personalizados para los sliders - Tema Violeta (EQ) */
+        input[type=range] {
+            -webkit-appearance: none;
+            width: 100%;
+            background: transparent;
+        }
+        input[type=range]:focus {
+            outline: none;
+        }
+        input[type=range]::-webkit-slider-runnable-track {
+            width: 100%;
+            height: 6px;
+            cursor: pointer;
+            background: #374151; /* gray-700 */
+            border-radius: 9999px;
+        }
+        input[type=range]::-webkit-slider-thumb {
+            height: 16px;
+            width: 16px;
+            border-radius: 50%;
+            background: #8b5cf6; /* violet-500 */
+            cursor: pointer;
+            -webkit-appearance: none;
+            margin-top: -5px;
+            box-shadow: 0 0 10px rgba(139, 92, 246, 0.5);
+            transition: transform 0.1s;
+        }
+        input[type=range]::-webkit-slider-thumb:hover {
+            transform: scale(1.2);
+        }
+        input[type=range]::-moz-range-track {
+            width: 100%;
+            height: 6px;
+            cursor: pointer;
+            background: #374151;
+            border-radius: 9999px;
+        }
+        input[type=range]::-moz-range-thumb {
+            height: 16px;
+            width: 16px;
+            border-radius: 50%;
+            background: #8b5cf6;
+            cursor: pointer;
+            border: none;
+            box-shadow: 0 0 10px rgba(139, 92, 246, 0.5);
+        }
+    </style>
+</head>
+<body class="bg-gray-900 text-gray-200 font-sans min-h-screen p-4 md:p-8 selection:bg-violet-500 selection:text-white">
+
+    <div class="max-w-7xl mx-auto">
+        
+        <header class="mb-8 border-b border-gray-800 pb-4">
+            <h1 class="text-3xl font-bold text-white mb-2 tracking-tight">Ecualizador Paramétrico (EQ) - Simulador Visual</h1>
+            <p class="text-gray-400">Interactúa con una banda paramétrica de ecualización. Observa cómo la curva afecta el espectro de frecuencias simulado de fondo en tiempo real.</p>
+        </header>
+
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 mb-8">
+            
+            <!-- VISUALIZACIÓN PRINCIPAL (Canvas) -->
+            <div class="lg:col-span-8 flex flex-col gap-6 order-2 lg:order-1">
+                <div class="bg-gray-800 p-4 md:p-6 rounded-2xl shadow-xl border border-gray-700 h-full flex flex-col">
+                    <div class="flex justify-between items-center mb-4">
+                        <h3 class="text-lg font-medium text-white flex items-center">
+                            Espectro y Curva de EQ (Campana)
+                        </h3>
+                        <div class="flex items-center gap-4 text-xs font-medium">
+                            <span class="flex items-center gap-1"><span class="w-3 h-3 rounded-sm bg-[rgba(139,92,246,0.3)] border border-violet-500"></span> Espectro</span>
+                            <span class="flex items-center gap-1"><span class="w-4 h-0.5 bg-violet-500 shadow-[0_0_8px_#8b5cf6]"></span> Curva EQ</span>
+                        </div>
+                    </div>
+                    
+                    <!-- Contenedor del Canvas -->
+                    <div class="relative w-full flex-grow min-h-[350px] bg-gray-900 rounded-lg border border-gray-700 overflow-hidden" id="canvas-container-eq">
+                        <canvas id="canvas-eq" class="absolute top-0 left-0 w-full h-full"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <!-- PANEL DE CONTROL Y TEORÍA -->
+            <div class="lg:col-span-4 space-y-6 order-1 lg:order-2">
+                
+                <div class="bg-gray-800 p-6 rounded-2xl shadow-xl border border-gray-700">
+                    <h2 class="text-xl font-semibold text-white mb-6 flex items-center">
+                        <svg class="w-5 h-5 mr-2 text-violet-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path></svg>
+                        Parámetros de Banda
+                    </h2>
+
+                    <!-- Frecuencia -->
+                    <div class="control-group mb-6">
+                        <div class="flex justify-between mb-1">
+                            <label class="font-medium text-gray-200">Frecuencia Central</label>
+                            <span id="val-freq" class="text-violet-400 font-mono">1.0 kHz</span>
+                        </div>
+                        <!-- Slider mapeado de 0 a 1000 para la escala logarítmica -->
+                        <input type="range" id="freq" min="0" max="1000" step="1" value="500">
+                        <p class="text-xs text-gray-400 mt-2">Determina el punto exacto (Hz) del espectro donde la ecualización tendrá su máximo efecto. (Eje X).</p>
+                    </div>
+
+                    <!-- Ganancia -->
+                    <div class="control-group mb-6">
+                        <div class="flex justify-between mb-1">
+                            <label class="font-medium text-gray-200">Ganancia (Gain)</label>
+                            <span id="val-gain" class="text-violet-400 font-mono">0.0 dB</span>
+                        </div>
+                        <input type="range" id="gain" min="-15" max="15" step="0.1" value="0">
+                        <p class="text-xs text-gray-400 mt-2">Cuánto volumen se añade (Boost) o se recorta (Cut) en la frecuencia seleccionada. (Eje Y).</p>
+                    </div>
+
+                    <!-- Q (Ancho de Banda) -->
+                    <div class="control-group">
+                        <div class="flex justify-between mb-1">
+                            <label class="font-medium text-gray-200">Factor Q</label>
+                            <span id="val-q" class="text-violet-400 font-mono">1.0</span>
+                        </div>
+                        <input type="range" id="q" min="0.5" max="10" step="0.1" value="1.0">
+                        <p class="text-xs text-gray-400 mt-2">Controla el ancho de la campana. Un Q bajo afecta muchas frecuencias vecinas. Un Q alto (afilado) afecta solo un rango muy estrecho.</p>
+                    </div>
+                </div>
+
+                <!-- Info Box -->
+                <div class="bg-violet-900/20 p-5 rounded-xl border border-violet-500/30">
+                    <h4 class="text-violet-400 font-semibold mb-2">Escala Logarítmica</h4>
+                    <p class="text-sm text-gray-300 leading-relaxed">
+                        El oído humano percibe las frecuencias de forma logarítmica, no lineal. Por eso, el espacio físico en pantalla entre 20 Hz y 200 Hz es similar al espacio entre 2 kHz y 20 kHz.
+                    </p>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // --- CONSTANTES MATEMÁTICAS ---
+        const MIN_FREQ = 20;
+        const MAX_FREQ = 20000;
+        const MIN_LOG = Math.log10(MIN_FREQ);
+        const MAX_LOG = Math.log10(MAX_FREQ);
+
+        // --- ESTADO DEL EQ ---
+        const state = {
+            freq: 1000, // Hz
+            gain: 0,    // dB (-15 a 15)
+            q: 1.0      // Ancho
+        };
+
+        // --- REFERENCIAS DOM ---
+        const els = {
+            freq: document.getElementById('freq'),
+            gain: document.getElementById('gain'),
+            q: document.getElementById('q'),
+            valFreq: document.getElementById('val-freq'),
+            valGain: document.getElementById('val-gain'),
+            valQ: document.getElementById('val-q'),
+            canvasEq: document.getElementById('canvas-eq'),
+            containerEq: document.getElementById('canvas-container-eq'),
+        };
+
+        const ctx = els.canvasEq.getContext('2d');
+
+        // --- GENERADOR DE ESPECTRO SIMULADO ---
+        const NUM_BANDS = 150; 
+        const spectrum = Array(NUM_BANDS).fill(0);
+        const spectrumTargets = Array(NUM_BANDS).fill(0);
+
+        // Generar un espectro rosa/ruido falso que baila
+        function updateSpectrumLogic() {
+            for(let i = 0; i < NUM_BANDS; i++) {
+                // Cambiar el objetivo aleatoriamente a veces
+                if (Math.random() < 0.15) {
+                    // Simular una forma de espectro general (cae un poco en agudos)
+                    let baseLevel = 1.0 - (i / NUM_BANDS) * 0.4;
+                    spectrumTargets[i] = Math.random() * baseLevel; 
+                }
+                // Suavizado (Low-pass) para que el movimiento sea orgánico
+                spectrum[i] += (spectrumTargets[i] - spectrum[i]) * 0.15;
+            }
+        }
+
+        // --- FUNCIONES DE CONVERSIÓN ---
+
+        // Convertir valor del slider (0-1000) a Hz logarítmicos
+        function sliderToFreq(val) {
+            const t = val / 1000;
+            return Math.pow(10, MIN_LOG + t * (MAX_LOG - MIN_LOG));
+        }
+
+        // Configurar slider inicial basado en 1000 Hz
+        function freqToSlider(hz) {
+            const t = (Math.log10(hz) - MIN_LOG) / (MAX_LOG - MIN_LOG);
+            return t * 1000;
+        }
+        els.freq.value = freqToSlider(1000);
+
+        // Formateador de texto de frecuencia
+        function formatFreq(hz) {
+            if (hz >= 1000) {
+                return (hz / 1000).toFixed(1) + ' kHz';
+            }
+            return Math.round(hz) + ' Hz';
+        }
+
+        // Convertir Hz a coordenada X (Pixeles)
+        function freqToPx(hz, w) {
+            return w * (Math.log10(hz) - MIN_LOG) / (MAX_LOG - MIN_LOG);
+        }
+
+        // Convertir coordenada X a Hz
+        function pxToFreq(x, w) {
+            const t = x / w;
+            return Math.pow(10, MIN_LOG + t * (MAX_LOG - MIN_LOG));
+        }
+
+        // Convertir dB a coordenada Y (Pixeles)
+        // Rango: -15dB a +15dB. Centro 0dB es h/2.
+        function dbToPx(db, h) {
+            // db / 15 da un rango de -1 a 1
+            // Invertido porque Y crece hacia abajo
+            return (h / 2) - ((db / 15) * (h / 2) * 0.85); // 0.85 para dar margen arriba y abajo
+        }
+
+        // --- ACTUALIZACIÓN DE EVENTOS ---
+        function updateState() {
+            state.freq = sliderToFreq(parseFloat(els.freq.value));
+            state.gain = parseFloat(els.gain.value);
+            state.q = parseFloat(els.q.value);
+
+            // Actualizar etiquetas
+            els.valFreq.innerText = formatFreq(state.freq);
+            els.valGain.innerText = (state.gain > 0 ? '+' : '') + state.gain.toFixed(1) + ' dB';
+            els.valQ.innerText = state.q.toFixed(1);
+        }
+
+        ['input', 'change'].forEach(evt => {
+            els.freq.addEventListener(evt, updateState);
+            els.gain.addEventListener(evt, updateState);
+            els.q.addEventListener(evt, updateState);
+        });
+
+        // --- DIBUJO Y ANIMACIÓN ---
+
+        function resizeCanvas() {
+            els.canvasEq.width = els.containerEq.clientWidth;
+            els.canvasEq.height = els.containerEq.clientHeight;
+        }
+        window.addEventListener('resize', resizeCanvas);
+
+        function draw() {
+            const w = els.canvasEq.width;
+            const h = els.canvasEq.height;
+
+            ctx.clearRect(0, 0, w, h);
+
+            updateSpectrumLogic();
+
+            // 1. DIBUJAR CUADRÍCULA DE FONDO
+            ctx.strokeStyle = '#374151'; // gray-700
+            ctx.lineWidth = 1;
+            ctx.fillStyle = '#9CA3AF'; // gray-400
+            ctx.font = '10px sans-serif';
+
+            // Líneas horizontales de dB (+15, 0, -15)
+            const dbs = [15, 0, -15];
+            dbs.forEach(db => {
+                let y = dbToPx(db, h);
+                ctx.beginPath();
+                // Destacar la línea de 0 dB
+                if (db === 0) {
+                    ctx.strokeStyle = '#4B5563'; // gray-600
+                    ctx.lineWidth = 2;
+                } else {
+                    ctx.strokeStyle = '#374151'; 
+                    ctx.lineWidth = 1;
+                }
+                ctx.moveTo(0, y);
+                ctx.lineTo(w, y);
+                ctx.stroke();
+                ctx.fillText((db > 0 ? '+' : '') + db + ' dB', 5, y - 5);
+            });
+
+            // Líneas verticales de Frecuencia
+            const freqs = [20, 50, 100, 500, 1000, 5000, 10000, 20000];
+            ctx.strokeStyle = '#374151';
+            ctx.lineWidth = 1;
+            freqs.forEach(f => {
+                let x = freqToPx(f, w);
+                ctx.beginPath();
+                ctx.moveTo(x, 0);
+                ctx.lineTo(x, h);
+                ctx.stroke();
+                // Evitar superposición de texto en los extremos
+                if (x > 20 && x < w - 30) {
+                    ctx.fillText(formatFreq(f), x + 5, h - 10);
+                }
+            });
+
+            // 2. CÁLCULO DE LA CURVA DE EQ
+            // Sigma controla el ancho. Adaptamos heurísticamente según Q y el ancho en pixeles
+            const centerPx = freqToPx(state.freq, w);
+            // Relación inversa: Mayor Q = menor sigma (campana más estrecha)
+            const sigmaPx = (w / 4) / state.q; 
+
+            // Función matemática para obtener el dB de la curva de campana en un pixel X dado
+            const getEqDbAtPx = (x) => {
+                // Función Gaussiana pura
+                return state.gain * Math.exp( -Math.pow(x - centerPx, 2) / (2 * Math.pow(sigmaPx, 2)) );
+            };
+
+            // 3. DIBUJAR ESPECTRO (Afectado por la curva de EQ)
+            const bandWidth = w / NUM_BANDS;
+            for(let i = 0; i < NUM_BANDS; i++) {
+                let bx = i * bandWidth;
+                let bCenterFreqPx = bx + bandWidth/2;
+                
+                // Nivel de señal "cruda" del espectro (mapeado visualmente entre -15dB y 0dB por defecto)
+                // (spectrum[i] va de 0 a 1)
+                let rawDb = -15 + (spectrum[i] * 12); 
+                
+                // Sumar la afectación del EQ en ese punto exacto
+                let eqDb = getEqDbAtPx(bCenterFreqPx);
+                let finalDb = rawDb + eqDb;
+
+                let bTopY = dbToPx(finalDb, h);
+                let bBottomY = h; // Dibujamos la barra desde abajo de la pantalla
+                let bHeight = bBottomY - bTopY;
+
+                ctx.fillStyle = 'rgba(139, 92, 246, 0.4)'; // violet-500 con transparencia
+                
+                // Borde ligero
+                ctx.strokeStyle = 'rgba(139, 92, 246, 0.8)';
+                ctx.lineWidth = 1;
+
+                // Margen entre barras
+                let margin = 1;
+                
+                ctx.fillRect(bx + margin, bTopY, bandWidth - margin*2, bHeight);
+                ctx.strokeRect(bx + margin, bTopY, bandWidth - margin*2, bHeight);
+            }
+
+            // 4. DIBUJAR LA LÍNEA SÓLIDA DE LA CURVA EQ
+            ctx.beginPath();
+            ctx.strokeStyle = '#8b5cf6'; // violet-500
+            ctx.lineWidth = 4;
+            ctx.lineJoin = 'round';
+            ctx.shadowBlur = 15;
+            ctx.shadowColor = '#8b5cf6';
+
+            for (let x = 0; x <= w; x += 2) {
+                let curveDb = getEqDbAtPx(x);
+                let y = dbToPx(curveDb, h);
+                
+                if (x === 0) ctx.moveTo(x, y);
+                else ctx.lineTo(x, y);
+            }
+            ctx.stroke();
+            
+            // Dibujar un pequeño círculo (handle) en el centro de la banda
+            let centerY = dbToPx(state.gain, h);
+            ctx.beginPath();
+            ctx.fillStyle = '#fff';
+            ctx.shadowBlur = 10;
+            ctx.shadowColor = '#fff';
+            ctx.arc(centerPx, centerY, 6, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Limpiar sombras para que no afecten en el próximo frame al grid
+            ctx.shadowBlur = 0;
+
+            // Loop de animación
+            requestAnimationFrame(draw);
+        }
+
+        // Inicializar
+        setTimeout(() => {
+            resizeCanvas();
+            updateState();
+            requestAnimationFrame(draw);
+        }, 100);
+
+    </script>
+</body>
+</html>

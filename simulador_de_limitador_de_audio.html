@@ -1,0 +1,348 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simulador de Limitador de Audio</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Estilos personalizados para los sliders - Tema Naranja (Limitador) */
+        input[type=range] {
+            -webkit-appearance: none;
+            width: 100%;
+            background: transparent;
+        }
+        input[type=range]:focus {
+            outline: none;
+        }
+        input[type=range]::-webkit-slider-runnable-track {
+            width: 100%;
+            height: 6px;
+            cursor: pointer;
+            background: #374151; /* gray-700 */
+            border-radius: 9999px;
+        }
+        input[type=range]::-webkit-slider-thumb {
+            height: 16px;
+            width: 16px;
+            border-radius: 50%;
+            background: #f97316; /* orange-500 */
+            cursor: pointer;
+            -webkit-appearance: none;
+            margin-top: -5px;
+            box-shadow: 0 0 10px rgba(249, 115, 22, 0.5);
+            transition: transform 0.1s;
+        }
+        input[type=range]::-webkit-slider-thumb:hover {
+            transform: scale(1.2);
+        }
+        input[type=range]::-moz-range-track {
+            width: 100%;
+            height: 6px;
+            cursor: pointer;
+            background: #374151;
+            border-radius: 9999px;
+        }
+        input[type=range]::-moz-range-thumb {
+            height: 16px;
+            width: 16px;
+            border-radius: 50%;
+            background: #f97316;
+            cursor: pointer;
+            border: none;
+            box-shadow: 0 0 10px rgba(249, 115, 22, 0.5);
+        }
+    </style>
+</head>
+<body class="bg-gray-900 text-gray-200 font-sans min-h-screen p-4 md:p-8 selection:bg-orange-500 selection:text-white">
+
+    <div class="max-w-7xl mx-auto">
+        
+        <header class="mb-8 border-b border-gray-800 pb-4">
+            <h1 class="text-3xl font-bold text-white mb-2 tracking-tight">Limitador de Audio Visual</h1>
+            <p class="text-gray-400">Observa cómo un limitador "brickwall" detiene los picos de audio de forma absoluta. Ajusta la ganancia para empujar la señal contra el techo.</p>
+        </header>
+
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 mb-8">
+            
+            <!-- PANEL DE CONTROL -->
+            <div class="lg:col-span-4 space-y-8 bg-gray-800 p-6 rounded-2xl shadow-xl border border-gray-700">
+                <h2 class="text-xl font-semibold text-white mb-4 flex items-center">
+                    <svg class="w-5 h-5 mr-2 text-orange-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"></path></svg>
+                    Parámetros
+                </h2>
+
+                <!-- Input Gain -->
+                <div class="control-group">
+                    <div class="flex justify-between mb-1">
+                        <label class="font-medium text-gray-200">Ganancia de Entrada</label>
+                        <span id="val-input-gain" class="text-orange-400 font-mono">+6 dB</span>
+                    </div>
+                    <input type="range" id="input-gain" min="0" max="24" step="0.5" value="6">
+                </div>
+
+                <!-- Ceiling -->
+                <div class="control-group">
+                    <div class="flex justify-between mb-1">
+                        <label class="font-medium text-gray-200">Techo (Ceiling)</label>
+                        <span id="val-ceiling" class="text-orange-400 font-mono">-1 dB</span>
+                    </div>
+                    <input type="range" id="ceiling" min="-12" max="0" step="0.5" value="-1">
+                </div>
+
+                <!-- Release -->
+                <div class="control-group">
+                    <div class="flex justify-between mb-1">
+                        <label class="font-medium text-gray-200">Liberación (Release)</label>
+                        <span id="val-release" class="text-orange-400 font-mono">50 ms</span>
+                    </div>
+                    <input type="range" id="release" min="5" max="500" step="5" value="50">
+                </div>
+            </div>
+
+            <!-- VISUALIZACIÓN PRINCIPAL -->
+            <div class="lg:col-span-8 flex flex-col gap-6">
+                
+                <!-- Onda de Audio Limitada -->
+                <div class="bg-gray-800 p-4 md:p-6 rounded-2xl shadow-xl border border-gray-700 h-full flex flex-col">
+                    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4">
+                        <h3 class="text-lg font-medium text-white flex items-center">
+                            Forma de Onda (Brickwall)
+                        </h3>
+                        <div class="flex items-center gap-4 text-xs mt-2 sm:mt-0 font-medium">
+                            <span class="flex items-center gap-1"><span class="w-3 h-3 rounded-full bg-gray-500"></span> Entrada (con Ganancia)</span>
+                            <span class="flex items-center gap-1"><span class="w-3 h-3 rounded-full bg-orange-500 shadow-[0_0_8px_#f97316]"></span> Salida Limitada</span>
+                            <span class="flex items-center gap-1"><span class="w-3 h-0.5 bg-red-500"></span> Techo (Ceiling)</span>
+                        </div>
+                    </div>
+                    
+                    <div class="relative w-full flex-grow min-h-[300px] bg-gray-900 rounded-lg border border-gray-700 overflow-hidden" id="canvas-container-waveform">
+                        <canvas id="canvas-waveform" class="absolute top-0 left-0 w-full h-full"></canvas>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+        <!-- TARJETAS DESCRIPTIVAS -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div class="bg-gray-800/50 p-5 rounded-xl border border-gray-700/50 hover:bg-gray-800 transition-colors">
+                <h4 class="text-orange-400 font-semibold mb-2">Ganancia de Entrada (Input Gain)</h4>
+                <p class="text-sm text-gray-400 leading-relaxed">
+                    Aumenta el volumen general de la señal de audio *antes* de que golpee el limitador. Al subir la ganancia, empujas la onda contra el "techo", creando más volumen percibido a costa de aplastar los picos (reducción de rango dinámico).
+                </p>
+            </div>
+            
+            <div class="bg-gray-800/50 p-5 rounded-xl border border-gray-700/50 hover:bg-gray-800 transition-colors">
+                <h4 class="text-orange-400 font-semibold mb-2">Techo (Ceiling)</h4>
+                <p class="text-sm text-gray-400 leading-relaxed">
+                    El límite absoluto o "Brickwall". Ningún pico de la señal podrá superar este nivel, pase lo que pase. Se suele ajustar ligeramente por debajo de 0 dB (ej. -0.3 dB a -1 dB) para evitar distorsión al convertir el audio a formatos como MP3 o reproducirlo en dispositivos analógicos (True Peak).
+                </p>
+            </div>
+
+            <div class="bg-gray-800/50 p-5 rounded-xl border border-gray-700/50 hover:bg-gray-800 transition-colors">
+                <h4 class="text-orange-400 font-semibold mb-2">Liberación (Release)</h4>
+                <p class="text-sm text-gray-400 leading-relaxed">
+                    Determina qué tan rápido se recupera el volumen original después de que un pico ha sido aplastado por el techo. Un Release muy rápido puede causar distorsión (efecto de "bombeo" agresivo), mientras que uno muy lento puede hundir demasiado el volumen de lo que sigue después del pico.
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // --- ESTADO DEL LIMITADOR ---
+        const state = {
+            inputGain: 6, // dB
+            ceiling: -1,  // dB
+            release: 50   // ms
+        };
+
+        // --- REFERENCIAS DOM ---
+        const els = {
+            inputGain: document.getElementById('input-gain'),
+            ceiling: document.getElementById('ceiling'),
+            release: document.getElementById('release'),
+            valInputGain: document.getElementById('val-input-gain'),
+            valCeiling: document.getElementById('val-ceiling'),
+            valRelease: document.getElementById('val-release'),
+            canvasWaveform: document.getElementById('canvas-waveform'),
+            containerWaveform: document.getElementById('canvas-container-waveform'),
+        };
+
+        const ctx = els.canvasWaveform.getContext('2d');
+
+        // --- DATOS DE ONDA SIMULADA ---
+        const SAMPLES = 1200; 
+        const originalSignal = new Float32Array(SAMPLES);
+        
+        // Generar señal compleja (bajos + picos altos)
+        function generateSignal() {
+            for (let i = 0; i < SAMPLES; i++) {
+                let t = i / 1000; 
+                
+                // Base de frecuencia baja constante
+                let val = Math.sin(2 * Math.PI * 10 * t) * 0.2; 
+                
+                // Picos pronunciados en ciertos momentos
+                if (i > 150 && i < 250) val += Math.sin(2 * Math.PI * 40 * t) * Math.exp(-(i - 150) / 30) * 0.8;
+                if (i > 500 && i < 650) val += Math.sin(2 * Math.PI * 60 * t) * Math.exp(-(i - 500) / 40) * 0.9;
+                if (i > 850 && i < 950) val += Math.sin(2 * Math.PI * 80 * t) * Math.exp(-(i - 850) / 20) * 1.0;
+
+                originalSignal[i] = val;
+            }
+        }
+        generateSignal();
+
+        // --- ACTUALIZACIÓN DE EVENTOS ---
+        function updateState() {
+            state.inputGain = parseFloat(els.inputGain.value);
+            state.ceiling = parseFloat(els.ceiling.value);
+            state.release = parseFloat(els.release.value);
+
+            els.valInputGain.innerText = `+${state.inputGain} dB`;
+            els.valCeiling.innerText = `${state.ceiling} dB`;
+            els.valRelease.innerText = `${state.release} ms`;
+
+            drawWaveform();
+        }
+
+        ['input', 'change'].forEach(evt => {
+            els.inputGain.addEventListener(evt, updateState);
+            els.ceiling.addEventListener(evt, updateState);
+            els.release.addEventListener(evt, updateState);
+        });
+
+        // --- FUNCIONES DE DIBUJO ---
+
+        function resizeCanvas() {
+            els.canvasWaveform.width = els.containerWaveform.clientWidth;
+            els.canvasWaveform.height = els.containerWaveform.clientHeight;
+            drawWaveform();
+        }
+        window.addEventListener('resize', resizeCanvas);
+
+        // Convertir decibelios a factor multiplicador lineal
+        function dbToLinear(db) {
+            return Math.pow(10, db / 20);
+        }
+
+        function drawWaveform() {
+            const w = els.canvasWaveform.width;
+            const h = els.canvasWaveform.height;
+
+            ctx.clearRect(0, 0, w, h);
+
+            // Preparar arreglos
+            const boostedSignal = new Float32Array(SAMPLES);
+            const limitedSignal = new Float32Array(SAMPLES);
+            
+            const gainFactor = dbToLinear(state.inputGain);
+            const ceilingFactor = dbToLinear(state.ceiling);
+
+            // Factores de tiempo
+            const dt = 1.0 / 1000.0;
+            // Ataque instantáneo en limitadores brickwall (0 ms)
+            // Release exagerado visualmente para que la envolvente sea notoria en pantalla
+            const releaseTime = (state.release * 4) / 1000.0; 
+            const releaseCoeff = Math.exp(-dt / releaseTime);
+
+            let currentGainReductionFactor = 1.0; // 1.0 = no reduction
+
+            // Procesamiento de audio
+            for (let i = 0; i < SAMPLES; i++) {
+                // 1. Aplicar Ganancia de entrada
+                let inputSample = originalSignal[i] * gainFactor;
+                boostedSignal[i] = inputSample;
+
+                let absSample = Math.abs(inputSample);
+                let targetGainReduction = 1.0;
+
+                // 2. Calcular exceso sobre el techo
+                if (absSample > ceilingFactor) {
+                    // Si sobrepasa, calcular cuánto hay que reducir para quedarse exactamente en el techo
+                    targetGainReduction = ceilingFactor / absSample;
+                }
+
+                // 3. Aplicar Envolvente (Attack instantáneo, Release suavizado)
+                if (targetGainReduction < currentGainReductionFactor) {
+                    // Ataque (baja el volumen instantáneamente al detectar pico)
+                    currentGainReductionFactor = targetGainReduction; 
+                } else {
+                    // Liberación (recupera el volumen lentamente)
+                    currentGainReductionFactor = (releaseCoeff * currentGainReductionFactor) + ((1 - releaseCoeff) * targetGainReduction);
+                }
+
+                // 4. Salida final
+                limitedSignal[i] = inputSample * currentGainReductionFactor;
+            }
+
+            const centerY = h / 2;
+            // Rango lineal visual de -2 a 2 para acomodar señal con ganancia fuerte
+            const maxVisibleAmplitude = 2.5; 
+
+            // Función de ayuda para dibujar paths
+            function drawPath(signalArray, colorStr, lineWidth, isGlow) {
+                ctx.beginPath();
+                ctx.strokeStyle = colorStr;
+                ctx.lineWidth = lineWidth;
+                
+                if (isGlow) {
+                    ctx.shadowBlur = 12;
+                    ctx.shadowColor = colorStr;
+                } else {
+                    ctx.shadowBlur = 0;
+                }
+
+                for (let i = 0; i < SAMPLES; i++) {
+                    let x = (i / SAMPLES) * w;
+                    let y = centerY - (signalArray[i] / maxVisibleAmplitude) * (h / 2);
+                    
+                    if (i === 0) ctx.moveTo(x, y);
+                    else ctx.lineTo(x, y);
+                }
+                ctx.stroke();
+                ctx.shadowBlur = 0; // reset
+            }
+
+            // --- 1. Líneas de Cuadrícula ---
+            ctx.beginPath();
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.05)';
+            ctx.lineWidth = 1;
+            ctx.moveTo(0, h/2); ctx.lineTo(w, h/2); // Centro
+            ctx.stroke();
+
+            // --- 2. Líneas de Techo (Ceiling) ---
+            const ceilingY1 = centerY - (ceilingFactor / maxVisibleAmplitude) * (h / 2);
+            const ceilingY2 = centerY + (ceilingFactor / maxVisibleAmplitude) * (h / 2);
+            
+            ctx.beginPath();
+            ctx.strokeStyle = 'rgba(239, 68, 68, 0.8)'; // red-500
+            ctx.lineWidth = 2;
+            ctx.setLineDash([8, 6]); // Línea punteada
+            
+            ctx.moveTo(0, ceilingY1); ctx.lineTo(w, ceilingY1);
+            ctx.moveTo(0, ceilingY2); ctx.lineTo(w, ceilingY2);
+            ctx.stroke();
+            ctx.setLineDash([]); // Reset
+            
+            // Texto del techo
+            ctx.fillStyle = 'rgba(239, 68, 68, 0.8)';
+            ctx.font = '12px sans-serif';
+            ctx.fillText("Ceiling", 10, ceilingY1 - 8);
+
+            // --- 3. Señal Original + Ganancia (Fondo gris) ---
+            drawPath(boostedSignal, 'rgba(107, 114, 128, 0.4)', 2, false); // gray-500 traslúcido
+
+            // --- 4. Señal Limitada (Naranja brillante) ---
+            drawPath(limitedSignal, '#f97316', 2.5, true); // orange-500
+        }
+
+        // Inicializar
+        setTimeout(() => {
+            resizeCanvas();
+            updateState();
+        }, 100);
+
+    </script>
+</body>
+</html>

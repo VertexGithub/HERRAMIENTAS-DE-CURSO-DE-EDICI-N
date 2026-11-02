@@ -1,0 +1,604 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fundamentos de Audio Digital</title>
+    
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Roboto+Mono:wght@400;500&display=swap" rel="stylesheet">
+    
+    <!-- FontAwesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        mono: ['Roboto Mono', 'monospace'],
+                    },
+                    colors: {
+                        slate: {
+                            850: '#151f32',
+                            900: '#0f172a',
+                        },
+                        cyan: {
+                            400: '#22d3ee',
+                            500: '#06b6d4',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        body {
+            background-color: #0f172a;
+            color: #e2e8f0;
+            overflow-x: hidden;
+        }
+
+        /* Custom Plugin-style Range Sliders */
+        input[type=range] {
+            -webkit-appearance: none;
+            width: 100%;
+            background: transparent;
+            margin: 10px 0;
+        }
+        input[type=range]:focus {
+            outline: none;
+        }
+        input[type=range]::-webkit-slider-runnable-track {
+            width: 100%;
+            height: 6px;
+            cursor: pointer;
+            background: #334155;
+            border-radius: 9999px;
+            border: 1px solid #1e293b;
+        }
+        input[type=range]::-webkit-slider-thumb {
+            height: 18px;
+            width: 18px;
+            border-radius: 50%;
+            background: #06b6d4;
+            cursor: pointer;
+            -webkit-appearance: none;
+            margin-top: -7px;
+            box-shadow: 0 0 10px rgba(6, 182, 212, 0.4), inset 0 2px 4px rgba(255,255,255,0.3);
+            border: 1px solid #0891b2;
+            transition: transform 0.1s;
+        }
+        input[type=range]::-webkit-slider-thumb:hover {
+            transform: scale(1.15);
+            background: #22d3ee;
+        }
+
+        /* Custom Radio Buttons / Tabs */
+        .format-tab input:checked + div {
+            background-color: #06b6d4;
+            color: #fff;
+            border-color: #06b6d4;
+            box-shadow: 0 0 12px rgba(6, 182, 212, 0.4);
+        }
+
+        /* Meter gradients */
+        .meter-fill {
+            transition: height 0.05s ease-out;
+            background: linear-gradient(to top, #22c55e 0%, #eab308 70%, #ef4444 100%);
+        }
+        
+        .meter-fill-lufs {
+            transition: height 0.2s ease-out; /* Slower, more integrated */
+            background: linear-gradient(to top, #3b82f6 0%, #a855f7 70%, #ec4899 100%);
+        }
+    </style>
+</head>
+<body class="antialiased min-h-screen p-4 md:p-8 flex flex-col items-center">
+
+    <header class="w-full max-w-6xl mb-10 text-center md:text-left border-b border-slate-800 pb-6">
+        <div class="inline-flex items-center justify-center p-3 bg-cyan-500/10 rounded-xl text-cyan-400 mb-4">
+            <i class="fa-solid fa-sliders text-2xl"></i>
+        </div>
+        <h1 class="text-3xl md:text-4xl font-bold text-white tracking-tight">Fundamentos de Audio Digital</h1>
+        <p class="text-slate-400 mt-2 text-lg max-w-3xl">Explora los conceptos clave que dan forma al sonido digital moderno. Interactúa con los simuladores para entender el comportamiento de la señal en tiempo real.</p>
+    </header>
+
+    <main class="w-full max-w-6xl space-y-8">
+
+        <!-- ========================================== -->
+        <!-- SECCIÓN 1: NIVEL Y SONORIDAD (dBFS vs LUFS)-->
+        <!-- ========================================== -->
+        <section class="bg-slate-850 rounded-2xl border border-slate-700/50 shadow-2xl overflow-hidden flex flex-col lg:flex-row">
+            
+            <!-- Panel de Info y Controles -->
+            <div class="p-6 lg:p-8 lg:w-1/3 flex flex-col justify-center border-b lg:border-b-0 lg:border-r border-slate-700/50 bg-slate-800/30">
+                <h2 class="text-xl font-semibold text-white mb-4 flex items-center gap-3">
+                    <i class="fa-solid fa-volume-up text-cyan-400 w-6"></i>
+                    dBFS vs <i class="fa-solid fa-ruler-vertical text-cyan-400 ml-1"></i> LUFS
+                </h2>
+                <div class="text-sm text-slate-400 space-y-3 mb-6">
+                    <p><strong class="text-slate-200">Decibelios (dBFS)</strong> miden el <i>pico máximo</i> instantáneo. Es crucial para evitar que la señal sature y distorsione (clipping) al superar los 0 dBFS.</p>
+                    <p><strong class="text-slate-200">LUFS</strong> (Loudness Units relative to Full Scale) miden la <i>sonoridad percibida</i> por el oído humano a lo largo del tiempo. Es el estándar actual en broadcast y streaming (Spotify, YouTube, TV).</p>
+                </div>
+                
+                <div class="space-y-6 mt-auto">
+                    <div>
+                        <div class="flex justify-between text-sm mb-1">
+                            <span class="font-medium text-slate-300">Nivel General (Ganancia)</span>
+                            <span id="s1-val-gain" class="font-mono text-cyan-400">0.0 dB</span>
+                        </div>
+                        <input type="range" id="s1-gain" min="0" max="2" step="0.05" value="0.8">
+                    </div>
+                    <div>
+                        <div class="flex justify-between text-sm mb-1">
+                            <span class="font-medium text-slate-300">Densidad (Compresión/Saturación)</span>
+                            <span id="s1-val-comp" class="font-mono text-cyan-400">0 %</span>
+                        </div>
+                        <input type="range" id="s1-comp" min="1" max="10" step="0.1" value="1">
+                        <p class="text-[10px] text-slate-500 mt-1 uppercase tracking-wider font-semibold">Observa cómo engorda la onda y suben los LUFS sin disparar los picos.</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Visualización y Medidores -->
+            <div class="p-6 lg:p-8 lg:w-2/3 flex gap-6 items-center bg-slate-900 relative">
+                <!-- Canvas de Onda -->
+                <div class="flex-grow h-64 bg-slate-950 rounded-xl border border-slate-700 relative overflow-hidden">
+                    <div class="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.03)_1px,transparent_1px)] bg-[size:20px_20px]"></div>
+                    <canvas id="canvas-s1" class="absolute inset-0 w-full h-full"></canvas>
+                </div>
+                
+                <!-- Medidores -->
+                <div class="flex gap-4 h-64">
+                    <!-- Medidor Pico -->
+                    <div class="flex flex-col items-center">
+                        <div class="w-4 flex-grow bg-slate-950 rounded-full border border-slate-700 relative overflow-hidden mb-2">
+                            <div id="meter-peak" class="absolute bottom-0 left-0 w-full meter-fill" style="height: 0%;"></div>
+                        </div>
+                        <span class="text-[10px] font-mono text-slate-400">PEAK</span>
+                    </div>
+                    <!-- Medidor LUFS -->
+                    <div class="flex flex-col items-center">
+                        <div class="w-4 flex-grow bg-slate-950 rounded-full border border-slate-700 relative overflow-hidden mb-2">
+                            <div id="meter-lufs" class="absolute bottom-0 left-0 w-full meter-fill-lufs" style="height: 0%;"></div>
+                        </div>
+                        <span class="text-[10px] font-mono text-slate-400">LUFS</span>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+
+        <!-- ========================================== -->
+        <!-- SECCIÓN 2: CONVERSIÓN A/D (Sample Rate & Bit Depth) -->
+        <!-- ========================================== -->
+        <section class="bg-slate-850 rounded-2xl border border-slate-700/50 shadow-2xl overflow-hidden flex flex-col lg:flex-row-reverse">
+            
+            <!-- Panel de Info y Controles -->
+            <div class="p-6 lg:p-8 lg:w-1/3 flex flex-col justify-center border-b lg:border-b-0 lg:border-l border-slate-700/50 bg-slate-800/30">
+                <h2 class="text-xl font-semibold text-white mb-4 flex items-center gap-3">
+                    <i class="fa-solid fa-wave-square text-cyan-400 w-6"></i> Hz & <i class="fa-solid fa-microchip text-cyan-400 ml-1"></i> Bits
+                </h2>
+                <div class="text-sm text-slate-400 space-y-3 mb-6">
+                    <p><strong class="text-slate-200">Frecuencia de Muestreo (Hz):</strong> Número de "fotos" por segundo tomadas al audio (Eje X). Estándares: 44.1kHz (CD), 48kHz (Video).</p>
+                    <p><strong class="text-slate-200">Profundidad de Bits (Bits):</strong> Resolución de amplitud de cada foto (Eje Y). 24-bit ofrece millones de escalones, mientras que resoluciones bajas crean un efecto "escalera" tosco (cuantización).</p>
+                </div>
+                
+                <div class="space-y-6 mt-auto">
+                    <div>
+                        <div class="flex justify-between text-sm mb-1">
+                            <span class="font-medium text-slate-300">Frecuencia de Muestreo (X)</span>
+                            <span id="s2-val-sr" class="font-mono text-cyan-400">Alta</span>
+                        </div>
+                        <!-- Rango invertido visualmente para mejor UX (derecha = más resolución) -->
+                        <input type="range" id="s2-sr" min="2" max="60" step="1" value="40">
+                    </div>
+                    <div>
+                        <div class="flex justify-between text-sm mb-1">
+                            <span class="font-medium text-slate-300">Profundidad de Bits (Y)</span>
+                            <span id="s2-val-bit" class="font-mono text-cyan-400">Alta</span>
+                        </div>
+                        <input type="range" id="s2-bit" min="1" max="30" step="1" value="25">
+                        <p class="text-[10px] text-slate-500 mt-1 uppercase tracking-wider font-semibold">Al bajar la resolución, la onda cyan se separa de la curva analógica gris original.</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Visualización -->
+            <div class="p-6 lg:p-8 lg:w-2/3 flex flex-col justify-center bg-slate-900 relative">
+                <div class="flex items-center gap-4 mb-4 text-xs font-mono">
+                    <span class="flex items-center gap-2"><div class="w-3 h-0.5 bg-slate-500"></div> Analógico Original</span>
+                    <span class="flex items-center gap-2"><div class="w-3 h-0.5 bg-cyan-500"></div><div class="w-1.5 h-1.5 rounded-full bg-cyan-400"></div> Muestreo Digital</span>
+                </div>
+                <div class="w-full h-64 bg-slate-950 rounded-xl border border-slate-700 relative overflow-hidden" id="container-s2">
+                    <canvas id="canvas-s2" class="absolute inset-0 w-full h-full"></canvas>
+                </div>
+            </div>
+        </section>
+
+
+        <!-- ========================================== -->
+        <!-- SECCIÓN 3: FORMATOS DE EXPORTACIÓN -->
+        <!-- ========================================== -->
+        <section class="bg-slate-850 rounded-2xl border border-slate-700/50 shadow-2xl overflow-hidden flex flex-col">
+            
+            <div class="p-6 lg:p-8 border-b border-slate-700/50 bg-slate-800/30 flex flex-col md:flex-row gap-6 md:items-center justify-between">
+                <div>
+                    <h2 class="text-xl font-semibold text-white mb-2 flex items-center gap-3">
+                        <i class="fa-regular fa-file-audio text-cyan-400"></i> Formatos de Exportación
+                    </h2>
+                    <p class="text-sm text-slate-400 max-w-xl">
+                        Diferentes formatos manejan la información de distinta manera. Los formatos <i>Lossless</i> (WAV, FLAC) retienen todo el espectro. Los formatos <i>Lossy</i> (MP3) eliminan frecuencias altas inaudibles para ahorrar espacio agresivamente.
+                    </p>
+                </div>
+                
+                <!-- Format Selector Tabs -->
+                <div class="flex gap-2 bg-slate-950 p-1.5 rounded-lg border border-slate-700">
+                    <label class="format-tab cursor-pointer relative">
+                        <input type="radio" name="format" value="wav" class="peer sr-only" checked>
+                        <div class="px-4 py-2 text-sm font-semibold text-slate-400 rounded-md transition-all peer-hover:text-slate-200">WAV</div>
+                    </label>
+                    <label class="format-tab cursor-pointer relative">
+                        <input type="radio" name="format" value="flac" class="peer sr-only">
+                        <div class="px-4 py-2 text-sm font-semibold text-slate-400 rounded-md transition-all peer-hover:text-slate-200">FLAC</div>
+                    </label>
+                    <label class="format-tab cursor-pointer relative">
+                        <input type="radio" name="format" value="mp3" class="peer sr-only">
+                        <div class="px-4 py-2 text-sm font-semibold text-slate-400 rounded-md transition-all peer-hover:text-slate-200">MP3</div>
+                    </label>
+                </div>
+            </div>
+
+            <div class="p-6 lg:p-8 flex flex-col lg:flex-row gap-8 bg-slate-900">
+                <!-- Espectrograma Animado -->
+                <div class="flex-grow">
+                    <h3 class="text-xs font-mono text-slate-400 mb-3 flex justify-between">
+                        <span>ESPECTRO DE FRECUENCIAS (20Hz - 20kHz)</span>
+                        <span id="s3-cutoff-text" class="text-cyan-400">Espectro Completo</span>
+                    </h3>
+                    <div class="w-full h-48 bg-slate-950 rounded-xl border border-slate-700 relative overflow-hidden">
+                        <canvas id="canvas-s3" class="absolute inset-0 w-full h-full"></canvas>
+                    </div>
+                </div>
+
+                <!-- Info y Tamaño de Archivo -->
+                <div class="lg:w-1/3 flex flex-col justify-center">
+                    <div id="s3-desc-wav" class="text-sm text-slate-300 format-desc">
+                        <span class="font-bold text-white">WAV (Waveform Audio):</span> Audio puro, sin comprimir. Conserva exactamente la señal original. Es el estándar absoluto para grabación y mezcla.
+                    </div>
+                    <div id="s3-desc-flac" class="text-sm text-slate-300 format-desc hidden">
+                        <span class="font-bold text-white">FLAC (Free Lossless Audio Codec):</span> Compresión matemática sin pérdida. Como un archivo ".zip" optimizado para audio. Mismo sonido que el WAV, pero pesa menos.
+                    </div>
+                    <div id="s3-desc-mp3" class="text-sm text-slate-300 format-desc hidden">
+                        <span class="font-bold text-white">MP3 (MPEG Audio Layer III):</span> Compresión con pérdida (Lossy). Usa psicoacústica para eliminar sonidos que el cerebro ignora y corta frecuencias por encima de ~16kHz.
+                    </div>
+
+                    <div class="mt-8">
+                        <div class="flex justify-between text-xs font-mono text-slate-400 mb-2">
+                            <span>Tamaño de Archivo Relativo</span>
+                            <span id="s3-size-text" class="text-white font-bold">100% (50 MB)</span>
+                        </div>
+                        <div class="w-full h-4 bg-slate-800 rounded-full border border-slate-700 overflow-hidden">
+                            <div id="s3-size-bar" class="h-full bg-cyan-500 transition-all duration-500 ease-out" style="width: 100%;"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </section>
+
+    </main>
+
+    <!-- Scripts para simulaciones -->
+    <script>
+        // Utilidades comunes
+        function resizeCanvas(canvas) {
+            const rect = canvas.parentElement.getBoundingClientRect();
+            canvas.width = rect.width;
+            canvas.height = rect.height;
+            return { w: rect.width, h: rect.height };
+        }
+
+        // ==========================================
+        // LÓGICA SECCIÓN 1: dBFS vs LUFS
+        // ==========================================
+        const s1_canvas = document.getElementById('canvas-s1');
+        const s1_ctx = s1_canvas.getContext('2d');
+        const s1_gain = document.getElementById('s1-gain');
+        const s1_comp = document.getElementById('s1-comp');
+        const m_peak = document.getElementById('meter-peak');
+        const m_lufs = document.getElementById('meter-lufs');
+        
+        let s1_phase = 0;
+        let s1_smoothedLufs = 0;
+        let s1_smoothedPeak = 0;
+
+        function renderS1() {
+            const { w, h } = resizeCanvas(s1_canvas);
+            s1_ctx.clearRect(0, 0, w, h);
+
+            const gain = parseFloat(s1_gain.value);
+            const comp = parseFloat(s1_comp.value); // 1 to 10
+            
+            // Actualizar textos
+            document.getElementById('s1-val-gain').innerText = (Math.log10(gain > 0.01 ? gain : 0.01) * 20).toFixed(1) + ' dB';
+            document.getElementById('s1-val-comp').innerText = Math.round(((comp - 1) / 9) * 100) + ' %';
+
+            s1_ctx.beginPath();
+            s1_ctx.moveTo(0, h / 2);
+            
+            let maxPeak = 0;
+            let sumEnergy = 0;
+            const points = w;
+            
+            // Dibujar línea central
+            s1_ctx.strokeStyle = 'rgba(255, 255, 255, 0.1)';
+            s1_ctx.lineWidth = 1;
+            s1_ctx.beginPath();
+            s1_ctx.moveTo(0, h/2);
+            s1_ctx.lineTo(w, h/2);
+            s1_ctx.stroke();
+
+            // Dibujar onda
+            s1_ctx.beginPath();
+            s1_ctx.strokeStyle = '#06b6d4';
+            s1_ctx.lineWidth = 2.5;
+            s1_ctx.lineJoin = 'round';
+
+            for (let i = 0; i < points; i++) {
+                // Generar una onda compleja simulada que se mueva en el tiempo
+                const t = (i / points) * Math.PI * 4 + s1_phase;
+                
+                // Onda base
+                let val = Math.sin(t * 2) * 0.5 + Math.sin(t * 5.123) * 0.25 + Math.sin(t * 1.5) * 0.25;
+                
+                // Aplicar distorsión/compresión tipo saturación (tanh) si comp > 1
+                val = Math.tanh(val * comp);
+                
+                // Aplicar ganancia master y limitar a 1.0 artificialmente (Clipping digital duro a 0dBFS)
+                val = val * gain;
+                if (val > 1) val = 1;
+                if (val < -1) val = -1;
+
+                const y = h / 2 - (val * (h / 2) * 0.9); // 0.9 para dar un pequeño margen visual
+                s1_ctx.lineTo(i, y);
+
+                // Cálculos para medidores
+                const absVal = Math.abs(val);
+                if (absVal > maxPeak) maxPeak = absVal;
+                sumEnergy += (val * val); // RMS basis para LUFS simulado
+            }
+            
+            // Sombras para estética
+            s1_ctx.shadowBlur = 8;
+            s1_ctx.shadowColor = '#06b6d4';
+            s1_ctx.stroke();
+            s1_ctx.shadowBlur = 0; // reset
+
+            // Actualizar medidores (con suavizado/balística)
+            s1_smoothedPeak += (maxPeak - s1_smoothedPeak) * 0.4; // Ataque/Release rápido
+            
+            const rms = Math.sqrt(sumEnergy / points);
+            // Multiplicador arbitrario para que los LUFS se vean más altos y reaccionen fuerte a la compresión
+            let simulatedLufsLevel = rms * 1.4; 
+            if(simulatedLufsLevel > 1) simulatedLufsLevel = 1;
+            
+            s1_smoothedLufs += (simulatedLufsLevel - s1_smoothedLufs) * 0.05; // Integración lenta
+
+            m_peak.style.height = `${s1_smoothedPeak * 100}%`;
+            m_lufs.style.height = `${s1_smoothedLufs * 100}%`;
+
+            s1_phase += 0.03; // Velocidad de animación
+        }
+
+
+        // ==========================================
+        // LÓGICA SECCIÓN 2: SAMPLE RATE & BIT DEPTH
+        // ==========================================
+        const s2_canvas = document.getElementById('canvas-s2');
+        const s2_ctx = s2_canvas.getContext('2d');
+        const s2_sr = document.getElementById('s2-sr');
+        const s2_bit = document.getElementById('s2-bit');
+        let s2_phase = 0;
+
+        function renderS2() {
+            const { w, h } = resizeCanvas(s2_canvas);
+            s2_ctx.clearRect(0, 0, w, h);
+
+            const sampleRate = parseInt(s2_sr.value); // Cantidad de puntos (resolución X)
+            const bitDepthSteps = parseInt(s2_bit.value); // Cantidad de niveles de altura (resolución Y)
+            
+            // Actualizar labels descriptivos basados en el slider
+            const srLabel = sampleRate > 40 ? 'Alta' : (sampleRate > 15 ? 'Media' : 'Baja (Aliasing)');
+            const bitLabel = bitDepthSteps > 20 ? 'Alta' : (bitDepthSteps > 8 ? 'Media' : 'Baja (Cuantización)');
+            document.getElementById('s2-val-sr').innerText = srLabel;
+            document.getElementById('s2-val-bit').innerText = bitLabel;
+
+            // Función de la onda "Analógica" ideal
+            const analogWave = (x) => {
+                const t = (x / w) * Math.PI * 2 * 1.5 + s2_phase; // 1.5 ciclos
+                return Math.sin(t) * 0.8; // Rango -0.8 a 0.8
+            };
+
+            // 1. Dibujar Onda Analógica (Gris, de fondo)
+            s2_ctx.beginPath();
+            s2_ctx.strokeStyle = '#64748b'; // slate-500
+            s2_ctx.lineWidth = 2;
+            for(let x = 0; x <= w; x++) {
+                const y = h/2 - (analogWave(x) * (h/2));
+                if(x===0) s2_ctx.moveTo(x, y);
+                else s2_ctx.lineTo(x, y);
+            }
+            s2_ctx.stroke();
+
+            // 2. Calcular y Dibujar Onda Digital Cuantizada (Cyan)
+            s2_ctx.beginPath();
+            s2_ctx.strokeStyle = '#06b6d4';
+            s2_ctx.fillStyle = '#06b6d4';
+            s2_ctx.lineWidth = 2.5;
+
+            const stepWidth = w / sampleRate;
+            
+            for(let i = 0; i <= sampleRate; i++) {
+                const x = i * stepWidth;
+                
+                // Muestrear valor ideal
+                let val = analogWave(x);
+                
+                // Cuantizar (Bit Depth)
+                // Multiplicamos por bitDepthSteps, redondeamos, y dividimos para hacer el efecto escalera
+                val = Math.round(val * bitDepthSteps) / bitDepthSteps;
+                
+                const y = h/2 - (val * (h/2));
+                
+                // Dibujar línea escalonada (Sample and Hold)
+                if (i === 0) {
+                    s2_ctx.moveTo(x, y);
+                } else {
+                    const prevX = (i-1) * stepWidth;
+                    // línea horizontal
+                    s2_ctx.lineTo(x, s2_ctx.lastY);
+                    // línea vertical al nuevo valor
+                    s2_ctx.lineTo(x, y);
+                }
+                
+                s2_ctx.lastY = y; // guardar para el proximo escalón
+
+                // Dibujar el puntito (la muestra)
+                s2_ctx.beginPath();
+                s2_ctx.arc(x, y, 4, 0, Math.PI*2);
+                s2_ctx.fill();
+                s2_ctx.moveTo(x, y); // restaurar path principal
+            }
+            s2_ctx.stroke();
+
+            s2_phase -= 0.015; // Animación lenta hacia la izquierda
+        }
+
+
+        // ==========================================
+        // LÓGICA SECCIÓN 3: FORMATOS (ESPECTRO)
+        // ==========================================
+        const s3_canvas = document.getElementById('canvas-s3');
+        const s3_ctx = s3_canvas.getContext('2d');
+        const radioFormats = document.getElementsByName('format');
+        
+        const NUM_BARS = 60;
+        const spectrumBase = Array(NUM_BARS).fill(0);
+        const spectrumTargets = Array(NUM_BARS).fill(0);
+        
+        let currentFormat = 'wav';
+
+        radioFormats.forEach(r => r.addEventListener('change', (e) => {
+            currentFormat = e.target.value;
+            
+            // Toggle Descriptions
+            document.querySelectorAll('.format-desc').forEach(el => el.classList.add('hidden'));
+            document.getElementById(`s3-desc-${currentFormat}`).classList.remove('hidden');
+
+            // Update Size Bar
+            const sizeBar = document.getElementById('s3-size-bar');
+            const sizeText = document.getElementById('s3-size-text');
+            const cutoffText = document.getElementById('s3-cutoff-text');
+
+            if(currentFormat === 'wav') {
+                sizeBar.style.width = '100%';
+                sizeText.innerText = '100% (50 MB)';
+                cutoffText.innerText = 'Espectro Completo';
+                cutoffText.classList.replace('text-red-400', 'text-cyan-400');
+            } else if (currentFormat === 'flac') {
+                sizeBar.style.width = '55%';
+                sizeText.innerText = '55% (27 MB)';
+                cutoffText.innerText = 'Espectro Completo';
+                cutoffText.classList.replace('text-red-400', 'text-cyan-400');
+            } else {
+                sizeBar.style.width = '10%';
+                sizeText.innerText = '10% (5 MB)';
+                cutoffText.innerText = 'Corte a ~16kHz (Lossy)';
+                cutoffText.classList.replace('text-cyan-400', 'text-red-400');
+            }
+        }));
+
+        function renderS3() {
+            const { w, h } = resizeCanvas(s3_canvas);
+            s3_ctx.clearRect(0, 0, w, h);
+
+            const barWidth = w / NUM_BARS;
+            
+            // Crear el corte (High-cut filter) para MP3
+            const cutoffIndex = Math.floor(NUM_BARS * 0.75); // Cortar aprox al 75% del espectro
+
+            for (let i = 0; i < NUM_BARS; i++) {
+                // Generar movimiento aleatorio orgánico
+                if(Math.random() < 0.2) {
+                    // Forma de ruido rosa (cae en agudos)
+                    let maxVal = 1 - (i/NUM_BARS)*0.5; 
+                    spectrumTargets[i] = Math.random() * maxVal;
+                }
+                
+                // Suavizado
+                spectrumBase[i] += (spectrumTargets[i] - spectrumBase[i]) * 0.1;
+                
+                let val = spectrumBase[i];
+
+                // Si es MP3 y está por encima de la frecuencia de corte, matar la señal
+                if (currentFormat === 'mp3' && i > cutoffIndex) {
+                    val = 0;
+                }
+
+                const barHeight = val * (h * 0.9); // 0.9 margin
+                const x = i * barWidth;
+                const y = h - barHeight;
+
+                // Dibujar barra
+                // Cambiar color para las frecuencias altas dependiendo del formato
+                if(i > cutoffIndex && currentFormat === 'mp3') {
+                    // Draw faint background to show it's missing
+                    s3_ctx.fillStyle = 'rgba(239, 68, 68, 0.1)'; // faint red
+                    s3_ctx.fillRect(x + 1, h - (0.1*h), barWidth - 2, 0.1*h); 
+                } else {
+                    // Gradient based on frequency (X axis)
+                    const hue = 190 + (i/NUM_BARS)*80; // cyan to purple/pink
+                    s3_ctx.fillStyle = `hsla(${hue}, 90%, 60%, 0.8)`;
+                    s3_ctx.fillRect(x + 1, y, barWidth - 2, barHeight);
+                    
+                    // Top cap
+                    s3_ctx.fillStyle = '#fff';
+                    s3_ctx.fillRect(x + 1, y, barWidth - 2, 2);
+                }
+            }
+        }
+
+
+        // ==========================================
+        // LOOP PRINCIPAL DE ANIMACIÓN
+        // ==========================================
+        function animate() {
+            renderS1();
+            renderS2();
+            renderS3();
+            requestAnimationFrame(animate);
+        }
+
+        // Iniciar al cargar
+        window.onload = () => {
+            // Render inicial forzado para estabilizar tamaños
+            renderS1(); renderS2(); renderS3();
+            animate();
+        };
+
+        // Escuchar resize de ventana
+        window.addEventListener('resize', () => {
+            renderS1(); renderS2(); renderS3();
+        });
+
+    </script>
+</body>
+</html>
